@@ -1,2 +1,2 @@
-import scapy.all as scapy
+import scapy.all as *
 
