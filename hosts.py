@@ -6,13 +6,13 @@ from dns_poisoning import DnsPoisoner
 
 class Host():
 
-    def __init__(self, ip, mac, interface):
+    def __init__(self, ip, mac, interface, dns_queue_num):
 
         self.ip           = ip
         self.mac          = mac
         self.is_gateway   = ip[-2:] == ".1"
         self.arp_poisoner = ArpPoisoner(interface)
-        self.dns_poisoner = DnsPoisoner()
+        self.dns_poisoner = DnsPoisoner(ip, dns_queue_num)
 
     def arp_oneway(self, other_ip, other_mac):
 
@@ -53,8 +53,7 @@ def get_hosts(interface, range_, timeout):
     for (request, answer) in srp(packet, timeout=timeout, interface=interface)[0]:
 
         if answer.psrc[-2:] == ".1":
-            gateway = Host(answer.psrc, answer.mac, interface)
+            gateway = Host(answer.psrc, answer.mac, interface, 0)
         else:
-            hosts.append(Host(answer.psrc, answer.mac, interface))
-           
+            hosts.append(Host(answer.psrc, answer.mac, interface, 2*(len(hosts) + 1) ))
 
