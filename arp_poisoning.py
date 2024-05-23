@@ -5,12 +5,14 @@ import time
 class ArpPoisoner(multiprocessing.Process):
 
     def __init__(self, interface):
+
         multiprocessing.Process.__init__(self)
+
         self.interface = interface
         self.packets = []
         self.exit = False
 
-    def create_packet(self, mac_attacker, mac_victim, ip_to_spoof, ip_victim):
+    def add_packet(self, mac_attacker, mac_victim, ip_to_spoof, ip_victim):
 
         packet = Ether()/ARP()
 
@@ -24,8 +26,6 @@ class ArpPoisoner(multiprocessing.Process):
 
     def run(self):
 
-        assert self.packet != None
-        
         while not self.exit:
             
             for packet in self.packets:
