@@ -3,3 +3,5 @@ https://github.com/davidlares/arp-spoofing/blob/master/spoofer.py
 https://www.geeksforgeeks.org/how-to-make-a-arp-spoofing-attack-using-scapy-python/
 
 https://medium.datadriveninvestor.com/arp-cache-poisoning-using-scapy-d6711ecbe112
+
+https://thepythoncode.com/article/make-dns-spoof-python
