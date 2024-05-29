@@ -14,6 +14,7 @@ class CLI:
 
         self.interface = self.default_interface()
         self.range_    = self.default_range()
+        self.own_mac   = netifaces.ifaddresses(self.interface)[netifaces.AF_LINK][0]["addr"].encode("ascii")
         self.timeout   = 3
 
         self.hosts = []
@@ -64,6 +65,7 @@ class CLI:
 
     def set_interface(self, args):
         self.interface = self.default_interface() if args[1] == "default" else args[1]
+        self.own_mac   = netifaces.ifaddresses(self.interface)[netifaces.AF_LINK][0]["addr"].encode("ascii")
     
     set_params["iface"] = set_interface
     set_params["interface"] = set_interface
@@ -114,19 +116,19 @@ class CLI:
 
     show_params["hosts"] = show_hosts
 
-    def scan(self, _args):
+    def scan(self, args):
 
         self.gateway, self.hosts = get_hosts(self.interface, self.range_, self.timeout)
         
         if self.gateway:
             self.show_gateway(None)
         else:
-            print "W: no gateway found"
+            print "W: No gateway found"
 
         if self.hosts:
             self.show_hosts(None)
         else:
-            print "W: no hosts found"
+            print "W: No hosts found"
         
         self.run()
         
@@ -137,9 +139,98 @@ class CLI:
 
     commands["quit"] = quit_
 
+    def arp(self, args):
+
+        try:
+            self.commands[".arp_" + args[1]](args[1:])
+        
+        except KeyError as _:
+            print "E: Unknown command \"{}\"".format(args[:1])
+
+        except IndexError as _:
+            print "E: No command specified"
+
+    commands["arp"] = arp
+
+    def arp_set_addrs(self):
+
+        ip_to_spoof  = raw_input("IP address to spoof: ")
+        mac_to_spoof = raw_input("MAC address to lead to (leave emtpy for own address): ")
+
+        if not mac_to_spoof:
+            mac_to_spoof = self.own_mac
+
+        return ip_to_spoof, mac_to_spoof
+
+    def arp_attack(self, args, start, oneway):
+        
+        try:
+            target = hosts[int(args[1])]
+
+        except TypeError as _:
+            print "E: Could not parse input \"{}\" as integer".format(args[1])
+
+        except IndexError as _:
+            print "E: No or non-existent host specified"
+
+        if start:
+            ip_to_spoof, mac_to_spoof = self.arp_set_addrs()
+            target.arp_attack(ip_to_spoof, mac_to_spoof)
+            target.arp_start()
+
+        else:
+            target.arp_stop()
+
+    commands[".arp_oneway"] = lambda self, args: arp_attack(self, args, True, True)
+    commands[".arp_mitm"]   = lambda self, args: arp_attack(self, args, True, False)
+    commands[".arp_stop"]   = lambda self, args: arp_attack(self, args, False, False)
+
+    def dns(self, args):
+
+        try: 
+            self.commands[".dns_" + args[1]](self, args[1:])
+    
+        except KeyError as _:
+            print "E: Unknown command \"{}\"".format(args[:1])
+
+        except IndexError as _:
+            print "E: No command specified"
+
+    commands["dns"] = dns
+
+    def dns_set_addrs(self):
+
+        url_to_spoof = raw_input("URL to spoof: ")
+        ip_to_spoof  = raw_input("IP address to lead to (leave empty for own address): ")
+
+        if not ip_to_spoof:
+            ip_to_spoof = self.range_.split('/')[0]
+
+        return url_to_spoof, ip_to_spoof
+
+    def dns_attack(self, args, start):
+
+        try:
+            target = hosts[int(args[1])]
+
+        except TypeError as _:
+            print "E: Could not parse input \"{}\" as integer".format(args[1])
+
+        except IndexError as _:
+            print "E: No or non-existent host specified"
+
+        if start:
+            url_to_spoof, ip_to_spoof = self.dns_set_addrs()
+            target.dns_add(url_to_spoof, ip_to_spoof)
+            target.dns_start()
+
+        else:
+            target.dns_stop()
+
+    commands[".dns_poison"]   = lambda self, args: dns_attack(self, args, True, False, False)
+    commands[".dns_stop"]  = lambda self, args: dns_attack(self, args, True, False, False)
 
 if __name__ == "__main__":
 
     cli = CLI()
-
     cli.run()
