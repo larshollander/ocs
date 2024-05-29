@@ -1,3 +1,5 @@
+from scapy.all import *
+from netfilterqueue import NetfilterQueue
 import multiprocessing
 
 class SslRemover(multiprocessing.Process):

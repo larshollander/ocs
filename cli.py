@@ -6,9 +6,9 @@ from hosts import get_hosts
 
 class CLI:
 
-    commands   = {}
+    commands    = {}
     show_params = {}
-    set_params = {}
+    set_params  = {}
 
     def __init__(self):
 
@@ -49,6 +49,9 @@ class CLI:
         except KeyError as _:
             print "E: Unknown parameter \"{}\"".format(args[1])
 
+        except IndexError as _:
+            print "E: No value specified"
+
         self.run()
 
     commands["set"] = set_
@@ -88,14 +91,41 @@ class CLI:
         except:
             print "E: Could not find default gateway. Configure manually if needed."
 
+    def show_timeout(self, _args):
+        print self.timeout
+
+    show_params["timeout"] = show_timeout
+
+    def set_timeout(self, args):
+        try:
+            self.timeout = float(args[1])
+        except:
+            print "E: Could not parse input \"{}\" as number".format(args[1])
+
+    set_params["timeout"] = set_timeout
+
+    def show_gateway(self, _args):
+        print "gateway at {}".format(self.gateway.ip)
+
+    show_params["gateway"] = show_gateway
+
+    def show_hosts(self, _args):
+        print "\n".join(["{}: host at {}".format(i, self.hosts[i].ip) for i in range(len(self.hosts))])
+
+    show_params["hosts"] = show_hosts
+
     def scan(self, _args):
 
         self.gateway, self.hosts = get_hosts(self.interface, self.range_, self.timeout)
         
-        if not self.gateway:
+        if self.gateway:
+            self.show_gateway(None)
+        else:
             print "W: no gateway found"
 
-        if not self.hosts:
+        if self.hosts:
+            self.show_hosts(None)
+        else:
             print "W: no hosts found"
         
         self.run()
