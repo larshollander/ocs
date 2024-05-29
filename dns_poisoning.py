@@ -22,7 +22,7 @@ class DnsPoisoner(multiprocessing.Process):
 
     def handle_packet(self, packet_nfqueue):
 
-        packet_scapy = IP(packet_nfqueue.get_payload)
+        packet_scapy = IP(packet_nfqueue.get_payload())
         
         if packet_scapy.haslayer(DNSRR):
             packet_scapy = self.edit_dnsrr(packet_scapy)
