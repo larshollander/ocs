@@ -224,6 +224,25 @@ class CLI:
     commands[".arp_mitm"]   = arp_mitm
     commands[".arp_stop"]   = arp_stop
 
+    def ensure_mitm(self, target):
+        
+        if target.arp_active:
+
+            if target.arp_attack = "mitm":
+                pass
+
+            else:
+                target.arp_stop()
+                self.arp_mitm(["mitm", "target"])
+
+        else:
+
+            if target.arp_attack = "mitm":
+                target.arp_start()
+
+            else:
+                self.arp_mitm(["mitm", "target"])
+
     def dns(self, args):
 
         try: 
@@ -250,7 +269,9 @@ class CLI:
     def dns_start(self, args):
 
         target = self.get_target(args)
+        self.ensure_mitm(target)
         url_to_spoof, ip_to_spoof = self.dns_set_addrs()
+
         target.dns_add(url_to_spoof, ip_to_spoof)
         target.dns_start()
         self.run()
