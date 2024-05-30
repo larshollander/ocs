@@ -29,7 +29,7 @@ class ArpPoisoner(multiprocessing.Process):
         while not self.exit:
             
             for packet in self.packets:
-                sendp(self.packet, iface = self.interface)
+                sendp(packet, iface = self.interface, verbose=0)
             
             time.sleep(1)
 

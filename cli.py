@@ -167,7 +167,7 @@ class CLI:
     def get_target(self, args):
         
         try:
-            return hosts[int(args[1])]
+            return self.hosts[int(args[1])]
 
         except TypeError as _:
             print "E: Could not parse input \"{}\" as integer".format(args[1])
@@ -204,6 +204,7 @@ class CLI:
         ip_to_spoof, mac_to_spoof = self.arp_set_addrs()
         target.arp_attack(True, ip_to_spoof, mac_to_spoof)
         target.arp_start()
+        self.run()
 
     def arp_mitm(self, args):
 
@@ -211,11 +212,13 @@ class CLI:
         ip_to_spoof, mac_to_spoof = self.gateway.ip, self.own_mac
         target.arp_attack(False, ip_to_spoof, mac_to_spoof)
         target.arp_start()
+        self.run()
 
     def arp_stop(self, args):
 
         target = self.get_target(args)
         target.arp_stop()
+        self.run()
 
     commands[".arp_oneway"] = arp_oneway
     commands[".arp_mitm"]   = arp_mitm
@@ -250,9 +253,7 @@ class CLI:
         url_to_spoof, ip_to_spoof = self.dns_set_addrs()
         target.dns_add(url_to_spoof, ip_to_spoof)
         target.dns_start()
-
-        else:
-            target.dns_stop()
+        self.run()
 
     commands[".dns_poison"] = dns_start
 
@@ -260,6 +261,7 @@ class CLI:
         
         target = self.get_target(args)
         target.dns_stop()
+        self.run()
 
     commands[".dns_stop"] = dns_stop
 
