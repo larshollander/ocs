@@ -1,5 +1,6 @@
 from collections import defaultdict
 import netifaces
+import os
 
 from hosts import get_hosts
 
@@ -14,7 +15,7 @@ class CLI:
 
         self.interface = self.default_interface()
         self.range_    = self.default_range()
-        self.own_mac   = netifaces.ifaddresses(self.interface)[netifaces.AF_LINK][0]["addr"].encode("ascii")
+        self.own_mac   = self.default_mac()
         self.timeout   = 3
 
         self.hosts = []
@@ -57,17 +58,19 @@ class CLI:
 
     commands["set"] = set_
 
-    def show_interface(self, args):
+    def show_interface(self, _args):
         print self.interface
 
-    show_params["iface"] = show_interface
+    show_params["iface"]     = show_interface
     show_params["interface"] = show_interface
 
     def set_interface(self, args):
+        
         self.interface = self.default_interface() if args[1] == "default" else args[1]
-        self.own_mac   = netifaces.ifaddresses(self.interface)[netifaces.AF_LINK][0]["addr"].encode("ascii")
+        self.own_mac   = self.default_mac()
+        self.set_range(["range", "default"])
     
-    set_params["iface"] = set_interface
+    set_params["iface"]     = set_interface
     set_params["interface"] = set_interface
 
     def default_interface(self):
@@ -76,13 +79,29 @@ class CLI:
         except:
             print "E: Could not find default gateway. Configure manually if needed."
 
-    def show_range(self, args):
+    def show_mac(self, _args):
+        print self.own_mac
+
+    show_params["mac"] = show_mac
+
+    def set_mac(self, args):
+        self.own_mac = self.default_mac() if args[1] == "default" else args[1]
+
+    set_params["mac"] = set_mac
+
+    def default_mac(self):
+        try:
+            return netifaces.ifaddresses(self.interface)[netifaces.AF_LINK][0]["addr"].encode("ascii")
+        except:
+            print "E: Could not find own MAC address. Configure manually if needed"
+
+    def show_range(self, _args):
         print self.range_
 
     show_params["range"] = show_range
 
     def set_range(self, args):
-        self.range_ = self.default_range if args[1] == "default" else args[1]
+        self.range_ = self.default_range() if args[1] == "default" else args[1]
 
     set_params["range"] = set_range
 
@@ -134,10 +153,27 @@ class CLI:
         
     commands["scan"] = scan
 
+    def os_(self, args):
+        os.system(" ".join(args[1:]))
+        self.run()
+
+    commands["os"] = os_
+
     def quit_(self, _args):
         pass
 
     commands["quit"] = quit_
+
+    def get_target(self, args):
+        
+        try:
+            return hosts[int(args[1])]
+
+        except TypeError as _:
+            print "E: Could not parse input \"{}\" as integer".format(args[1])
+
+        except IndexError as _:
+            print "E: No or non-existent host specified"
 
     def arp(self, args):
 
@@ -162,28 +198,28 @@ class CLI:
 
         return ip_to_spoof, mac_to_spoof
 
-    def arp_attack(self, args, start, oneway):
-        
-        try:
-            target = hosts[int(args[1])]
+    def arp_oneway(self, args):
 
-        except TypeError as _:
-            print "E: Could not parse input \"{}\" as integer".format(args[1])
+        target = self.get_target(args)
+        ip_to_spoof, mac_to_spoof = self.arp_set_addrs()
+        target.arp_attack(True, ip_to_spoof, mac_to_spoof)
+        target.arp_start()
 
-        except IndexError as _:
-            print "E: No or non-existent host specified"
+    def arp_mitm(self, args):
 
-        if start:
-            ip_to_spoof, mac_to_spoof = self.arp_set_addrs()
-            target.arp_attack(ip_to_spoof, mac_to_spoof)
-            target.arp_start()
+        target = self.get_target(args)
+        ip_to_spoof, mac_to_spoof = self.gateway.ip, self.own_mac
+        target.arp_attack(False, ip_to_spoof, mac_to_spoof)
+        target.arp_start()
 
-        else:
-            target.arp_stop()
+    def arp_stop(self, args):
 
-    commands[".arp_oneway"] = lambda self, args: arp_attack(self, args, True, True)
-    commands[".arp_mitm"]   = lambda self, args: arp_attack(self, args, True, False)
-    commands[".arp_stop"]   = lambda self, args: arp_attack(self, args, False, False)
+        target = self.get_target(args)
+        target.arp_stop()
+
+    commands[".arp_oneway"] = arp_oneway
+    commands[".arp_mitm"]   = arp_mitm
+    commands[".arp_stop"]   = arp_stop
 
     def dns(self, args):
 
@@ -208,27 +244,24 @@ class CLI:
 
         return url_to_spoof, ip_to_spoof
 
-    def dns_attack(self, args, start):
+    def dns_start(self, args):
 
-        try:
-            target = hosts[int(args[1])]
-
-        except TypeError as _:
-            print "E: Could not parse input \"{}\" as integer".format(args[1])
-
-        except IndexError as _:
-            print "E: No or non-existent host specified"
-
-        if start:
-            url_to_spoof, ip_to_spoof = self.dns_set_addrs()
-            target.dns_add(url_to_spoof, ip_to_spoof)
-            target.dns_start()
+        target = self.get_target(args)
+        url_to_spoof, ip_to_spoof = self.dns_set_addrs()
+        target.dns_add(url_to_spoof, ip_to_spoof)
+        target.dns_start()
 
         else:
             target.dns_stop()
 
-    commands[".dns_poison"]   = lambda self, args: dns_attack(self, args, True, False, False)
-    commands[".dns_stop"]  = lambda self, args: dns_attack(self, args, True, False, False)
+    commands[".dns_poison"] = dns_start
+
+    def dns_stop(self, args):
+        
+        target = self.get_target(args)
+        target.dns_stop()
+
+    commands[".dns_stop"] = dns_stop
 
 if __name__ == "__main__":
 
