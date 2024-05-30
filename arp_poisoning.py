@@ -10,7 +10,6 @@ class ArpPoisoner(multiprocessing.Process):
 
         self.interface = interface
         self.packets = []
-        self.exit = False
 
     def add_packet(self, mac_attacker, mac_victim, ip_to_spoof, ip_victim):
 
@@ -24,7 +23,12 @@ class ArpPoisoner(multiprocessing.Process):
 
         self.packets.append(packet)
 
+    def clear_packets(self):
+        self.packets = []
+
     def run(self):
+
+        self.exit = False
 
         while not self.exit:
             

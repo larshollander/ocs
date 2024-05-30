@@ -9,28 +9,36 @@ class Host():
 
     def __init__(self, ip, mac, interface, dns_queue_num):
 
-        self.ip           = ip
-        self.mac          = mac
-        self.arp_poisoner = ArpPoisoner(interface)
-        self.dns_poisoner = DnsPoisoner(ip, dns_queue_num)
-        self.ssl_remover  = SslRemover(ip, dns_queue_num + 1)
+        self.ip            = ip
+        self.mac           = mac
+        self.arp_poisoner  = ArpPoisoner(interface)
+        self.arp_attack    = None
+        self.arp_active    = False
+        self.dns_poisoner  = DnsPoisoner(ip, dns_queue_num)
+        self.ssl_remover   = SslRemover(ip, dns_queue_num + 1)
 
     def arp_attack(self, oneway, other_ip, other_mac):
 
+        self.arp_poisoner.clear_packets()
+
         if oneway:
             self.arp_poisoner.add_packet(other_mac, self.mac, other_ip, self.ip)
+            self.arp_attack = "oneway"
 
         else:
             self.arp_poisoner.add_packet(other_mac, self.mac, other_ip, self.ip)
             self.arp_poisoner.add_packet(self.mac, other_mac, self.ip, other_ip)
+            self.arp_attack = "mitm"
 
     def arp_start(self):
 
         self.arp_poisoner.start()
+        self.arp_active = True
 
     def arp_stop(self):
 
         self.arp_poisoner.stop()
+        self.arp_active = False
 
     def dns_add(self, url, ip):
 
