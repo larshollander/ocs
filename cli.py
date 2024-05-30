@@ -142,10 +142,10 @@ class CLI:
     def arp(self, args):
 
         try:
-            self.commands[".arp_" + args[1]](args[1:])
+            self.commands[".arp_" + args[1]](self, args[1:])
         
         except KeyError as _:
-            print "E: Unknown command \"{}\"".format(args[:1])
+            print "E: Unknown command \"{}\"".format(" ".join(args[:1]))
 
         except IndexError as _:
             print "E: No command specified"
@@ -191,7 +191,7 @@ class CLI:
             self.commands[".dns_" + args[1]](self, args[1:])
     
         except KeyError as _:
-            print "E: Unknown command \"{}\"".format(args[:1])
+            print "E: Unknown command \"{}\"".format(" ".join(args[:1]))
 
         except IndexError as _:
             print "E: No command specified"
