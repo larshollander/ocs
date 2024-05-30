@@ -13,6 +13,9 @@ class CLI:
 
     def __init__(self):
 
+        self.ip_forward = os.system("cat /proc/sys/net/ipv4/ip_forward")
+        os.system("echo 1 > /proc/sys/net/ipv4/ip_forward")
+
         self.interface = self.default_interface()
         self.range_    = self.default_range()
         self.own_mac   = self.default_mac()
@@ -20,7 +23,7 @@ class CLI:
 
         self.hosts = []
 
-    def run(self):
+    def run(self):1
 
         args = raw_input(">>> ").split(' ')
     
@@ -160,7 +163,7 @@ class CLI:
     commands["os"] = os_
 
     def quit_(self, _args):
-        pass
+        os.system("echo {} > /proc/sys/net/ipv4/ip_forward".format(self.ip_forward))
 
     commands["quit"] = quit_
 
@@ -228,7 +231,7 @@ class CLI:
         
         if target.arp_active:
 
-            if target.arp_attack = "mitm":
+            if target.arp_attack == "mitm":
                 pass
 
             else:
@@ -237,7 +240,7 @@ class CLI:
 
         else:
 
-            if target.arp_attack = "mitm":
+            if target.arp_attack == "mitm":
                 target.arp_start()
 
             else:
