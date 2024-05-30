@@ -8,8 +8,8 @@ from hosts import get_hosts
 class CLI:
 
     commands    = {}
-    show_params = {}
-    set_params  = {}
+    params_all = {}
+    params_mut  = {}
 
     def __init__(self):
 
@@ -34,7 +34,7 @@ class CLI:
     def show(self, args):
 
         try:
-            self.show_params[args[1]](self, args[1:])
+            self.params_all[args[1]](self, args[1:])
 
         except KeyError as _:
             print "E: Unknown parameter \"{}\"".format(args[1])
@@ -46,7 +46,7 @@ class CLI:
     def set_(self, args):
 
         try:
-            self.set_params[args[1]](self, args[1:])
+            self.params_mut[args[1]](self, args[1:])
 
         except KeyError as _:
             print "E: Unknown parameter \"{}\"".format(args[1])
@@ -61,8 +61,8 @@ class CLI:
     def show_interface(self, _args):
         print self.interface
 
-    show_params["iface"]     = show_interface
-    show_params["interface"] = show_interface
+    params_all["iface"]     = show_interface
+    params_all["interface"] = show_interface
 
     def set_interface(self, args):
         
@@ -70,8 +70,8 @@ class CLI:
         self.own_mac   = self.default_mac()
         self.set_range(["range", "default"])
     
-    set_params["iface"]     = set_interface
-    set_params["interface"] = set_interface
+    params_mut["iface"]     = set_interface
+    params_mut["interface"] = set_interface
 
     def default_interface(self):
         try:
@@ -82,12 +82,12 @@ class CLI:
     def show_mac(self, _args):
         print self.own_mac
 
-    show_params["mac"] = show_mac
+    params_all["mac"] = show_mac
 
     def set_mac(self, args):
         self.own_mac = self.default_mac() if args[1] == "default" else args[1]
 
-    set_params["mac"] = set_mac
+    params_mut["mac"] = set_mac
 
     def default_mac(self):
         try:
@@ -98,12 +98,12 @@ class CLI:
     def show_range(self, _args):
         print self.range_
 
-    show_params["range"] = show_range
+    params_all["range"] = show_range
 
     def set_range(self, args):
         self.range_ = self.default_range() if args[1] == "default" else args[1]
 
-    set_params["range"] = set_range
+    params_mut["range"] = set_range
 
     def default_range(self):
         try:
@@ -115,7 +115,7 @@ class CLI:
     def show_timeout(self, _args):
         print self.timeout
 
-    show_params["timeout"] = show_timeout
+    params_all["timeout"] = show_timeout
 
     def set_timeout(self, args):
         try:
@@ -123,17 +123,17 @@ class CLI:
         except:
             print "E: Could not parse input \"{}\" as number".format(args[1])
 
-    set_params["timeout"] = set_timeout
+    params_mut["timeout"] = set_timeout
 
     def show_gateway(self, _args):
         print "gateway at {}".format(self.gateway.ip)
 
-    show_params["gateway"] = show_gateway
+    params_all["gateway"] = show_gateway
 
     def show_hosts(self, _args):
         print "\n".join(["{}: host at {}".format(i, self.hosts[i].ip) for i in range(len(self.hosts))])
 
-    show_params["hosts"] = show_hosts
+    params_all["hosts"] = show_hosts
 
     def scan(self, args):
 
