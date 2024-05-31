@@ -5,3 +5,7 @@ https://www.geeksforgeeks.org/how-to-make-a-arp-spoofing-attack-using-scapy-pyth
 https://medium.datadriveninvestor.com/arp-cache-poisoning-using-scapy-d6711ecbe112
 
 https://thepythoncode.com/article/make-dns-spoof-python
+
+SSL STRIPPING
+https://github.com/mitmproxy/mitmproxy/blob/main/examples/contrib/sslstrip.py
+https://github.com/mh4x0f/sslstrip3/blob/master/sslstrip/ClientRequest.py
