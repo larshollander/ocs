@@ -26,7 +26,7 @@ class Host():
         self.arp_attack = "oneway"
 
     # prepares mitm arp poisoning attack, telling this host that "gateway_ip" is at "other_ip" and telling the gateway that "self.ip" is at "other_mac"
-    def arp_mitm(self, gateway_ip, gateway_mac, other_mac)
+    def arp_mitm(self, gateway_ip, gateway_mac, other_mac):
 
         # remove existing packets before preparing new attack
         self.arp_poisoner.clear_packets()
