@@ -42,7 +42,45 @@ class CLI:
             print "E: Unknown command \"{}\"".format(args[0])
             self.prompt()
 
-    ### show & set functions for parameters ###
+    ### functions for main commands ###
+
+    # scan for hosts (and gateway) on local network
+    def scan(self, args):
+    
+        # "get_hosts" function from file "hosts.py"
+        self.gateway, self.hosts = get_hosts(self.interface, self.range_, self.timeout)
+        
+        # show found gateway ip or print warning message
+        if self.gateway:
+            self.show_gateway(None)
+
+        else:
+            print "W: No gateway found"
+
+        # show found host ip's or print warning message
+        if self.hosts:
+            self.show_hosts(None)
+
+        else:
+            print "W: No hosts found"
+        
+        self.prompt()
+        
+    commands["scan"] = scan
+
+    # easy access to terminal commands without having to quit
+    # can even start a new terminal session with "os su"
+    def os_(self, args):
+        os.system(" ".join(args[1:]))
+        self.prompt()
+
+    commands["os"] = os_
+
+    # reset ip forwarding and quit (by not calling "self.prompt()" again)
+    def quit_(self, _args):
+        os.system("echo {} > /proc/sys/net/ipv4/ip_forward".format(self.ip_forward))
+
+    commands["quit"] = quit_
 
     # print specified parameter
     # e.g. "self.show(['bar', 'baz'])" calls "self.show_bar(['baz'])"
@@ -84,6 +122,8 @@ class CLI:
 
     commands["set"] = set_
 
+    ### show & set functions for specific parameters ###
+    
     # simply print interface
     def show_interface(self, _args):
         print self.interface
@@ -210,43 +250,7 @@ class CLI:
 
     params_all["hosts"] = show_hosts
 
-    # scan for hosts (and gateway) on local network
-    def scan(self, args):
-    
-        # "get_hosts" function from file "hosts.py"
-        self.gateway, self.hosts = get_hosts(self.interface, self.range_, self.timeout)
-        
-        # show found gateway ip or print warning message
-        if self.gateway:
-            self.show_gateway(None)
-
-        else:
-            print "W: No gateway found"
-
-        # show found host ip's or print warning message
-        if self.hosts:
-            self.show_hosts(None)
-
-        else:
-            print "W: No hosts found"
-        
-        self.prompt()
-        
-    commands["scan"] = scan
-
-    # easy access to terminal commands without having to quit
-    # can even start a new terminal session with "os su"
-    def os_(self, args):
-        os.system(" ".join(args[1:]))
-        self.prompt()
-
-    commands["os"] = os_
-
-    # reset ip forwarding and quit (by not calling "self.prompt()" again)
-    def quit_(self, _args):
-        os.system("echo {} > /proc/sys/net/ipv4/ip_forward".format(self.ip_forward))
-
-    commands["quit"] = quit_
+    ### commands for attacks ###
 
     # return target specified by argument
     def get_target(self, args):
