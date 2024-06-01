@@ -2,8 +2,6 @@ from scapy.all import *
 from netfilterqueue import NetfilterQueue
 import multiprocessing
 
-load_layer("tls")    #enables tls on scapy
-
 class SslRemover(multiprocessing.Process):
 
     def __init__(self, ip_victim, queue_num):
