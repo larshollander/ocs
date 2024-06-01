@@ -78,8 +78,15 @@ class CLI:
 
     commands["os"] = os_
 
-    # reset ip forwarding and quit (by not calling "self.prompt()" again)
+    # stop all attacks and exit
     def quit_(self, _args):
+
+        # stop all attacks
+        for host in self.hosts:
+            host.arp_stop()
+            host.dns_stop()
+        
+        # reset ip forwarding
         os.system("echo {} > /proc/sys/net/ipv4/ip_forward".format(self.ip_forward))
 
     commands["quit"] = quit_
