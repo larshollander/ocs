@@ -1,6 +1,7 @@
 from scapy.all import *
 from netfilterqueue import NetfilterQueue
 import multiprocessing
+import cryptography    #required for tls
 
 load_layer("tls")    #enables tls for the https connection with the server
 
