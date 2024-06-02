@@ -283,7 +283,7 @@ class CLI:
             print "host {}\nip: {}\nmac: {}".format(args[0], self.hosts[args[0]].ip, self.hosts[args[0]].mac)
 
         except KeyError as _:
-            print "E: Host {} does not exist. Use indices to refer to hosts".format(args[0])
+            print "E: Host {} does not exist".format(args[0])
 
         except IndexError as _:
             print "E: No host specified"
@@ -340,7 +340,7 @@ class CLI:
             print "usage: arp [command] [host]"
             print "available commands:"
             print "\n".join(["    " + command[5:] for command in self.commands.keys() if command[:5] == ".arp_"])
-            print "Use indices to specify hosts. These can be seen with \"show hosts\""
+            print "host can be specified by index or address"
 
     help_for["arp"] = help_arp
 
@@ -376,7 +376,7 @@ class CLI:
             print "usage: dns [command] [host]"
             print "available commands:"
             print "\n".join(["    " + command[5:] for command in self.commands.keys() if command[:5] == ".dns_"])
-            print "Use indices to specify hosts. These can be seen with \"show hosts\""
+            print "host can be specified by index or address"
 
     help_for["dns"] = help_dns
 
@@ -403,13 +403,28 @@ class CLI:
         try:
             return self.hosts[int(args[1])]
 
-        # specified input cannot be parsed as integer
-        except TypeError as _:
-            print "E: Could not parse input \"{}\" as integer".format(args[1])
-
-        # if no (or a non-existent) host is specified, "self.hosts[int(args[1])]" will throw an IndexError
+        # if no host is specified, "args[1]" will throw an IndexError
         except IndexError as _:
-            print "E: No or non-existent host specified"
+            print "E: No host specified"
+
+        # input cannot be parsed as integer, try parsing as ip instead
+        except TypeError as _:
+            return self.get_target_ip(args)
+
+        # if host does not exist, "self.hosts[...]" will throw an IndexError
+        except KeyError as _:
+            print "E: Host \"{}\" does not exist".format(args[1])
+
+    # tries to return target specified by ip or mac address
+    def get_target_from_addr(self, args):
+        
+        # return host with specified address, if it exists
+        for host in self.hosts:
+            if host.ip == args[1] or host.mac == args[1]:
+                return host
+
+        # no host with specified address can be found
+        print "E: Host \"{}\" does not exist".format(args[1])
 
     # main arp command, calls subcommands 
     def arp(self, args):
@@ -453,18 +468,24 @@ class CLI:
     def arp_oneway(self, args):
 
         target = self.get_target(args)
-        ip_to_spoof, mac_to_spoof = self.arp_set_addrs()
-        target.arp_attack(True, ip_to_spoof, mac_to_spoof)
-        target.arp_start()
+
+        if target:
+            ip_to_spoof, mac_to_spoof = self.arp_set_addrs()
+            target.arp_attack(True, ip_to_spoof, mac_to_spoof)
+            target.arp_start()
+
         self.prompt()
 
     # prepare and start man-in-the-middle arp poisoning attack agains specified host
     def arp_mitm(self, args):
 
         target = self.get_target(args)
-        ip_to_spoof, mac_to_spoof = self.gateway.ip, self.own_mac
-        target.arp_attack(False, ip_to_spoof, mac_to_spoof)
-        target.arp_start()
+        
+        if target:
+            ip_to_spoof, mac_to_spoof = self.gateway.ip, self.own_mac
+            target.arp_attack(False, ip_to_spoof, mac_to_spoof)
+            target.arp_start()
+
         self.prompt()
 
     # stops arp poisoning attack against specified host
@@ -475,8 +496,11 @@ class CLI:
                 target.arp_stop()
 
         else:
+
             target = self.get_target(args)
-            target.arp_stop()
+
+            if target:
+                target.arp_stop()
 
         self.prompt()
 
@@ -543,17 +567,19 @@ class CLI:
     # set up and start dns poisoning attack against specified host
     def dns_start(self, args):
 
-        # get target and ensure that mi
         target = self.get_target(args)
-        self.ensure_mitm(target)
 
-        # add url to spoof via user prompt
-        # TODO meerdere urls mogelijk maken
-        url_to_spoof, ip_to_spoof = self.dns_set_addrs()
-        target.dns_add(url_to_spoof, ip_to_spoof)
+        if target:
+            self.ensure_mitm(target)
 
-        # start dns attack
-        target.dns_start()
+            # add url to spoof via user prompt
+            # TODO meerdere urls mogelijk maken
+            url_to_spoof, ip_to_spoof = self.dns_set_addrs()
+            target.dns_add(url_to_spoof, ip_to_spoof)
+
+            # start dns attack
+            target.dns_start()
+
         self.prompt()
 
     commands[".dns_poison"] = dns_start
@@ -566,9 +592,13 @@ class CLI:
                 target.dns_stop()
 
         else:
+
             target = self.get_target(args)
-            target.dns_stop()
-            self.prompt()
+
+            if target:
+                target.dns_stop()
+
+        self.prompt()
 
     commands[".dns_stop"] = dns_stop
 
