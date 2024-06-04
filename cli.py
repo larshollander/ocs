@@ -471,7 +471,7 @@ class CLI:
 
         if target:
             ip_to_spoof, mac_to_spoof = self.arp_set_addrs()
-            target.arp_oneway(True, ip_to_spoof, mac_to_spoof)
+            target.arp_oneway(ip_to_spoof, mac_to_spoof)
             target.arp_start()
 
         self.prompt()
@@ -483,7 +483,7 @@ class CLI:
         
         if target:
             ip_to_spoof, mac_to_spoof = self.gateway.ip, self.own_mac
-            target.arp_mitm(False, ip_to_spoof, mac_to_spoof)
+            target.arp_mitm(ip_to_spoof, mac_to_spoof)
             target.arp_start()
 
         self.prompt()
