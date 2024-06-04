@@ -195,7 +195,7 @@ class CLI:
 
     # manually configure own mac address
     def set_mac(self, args):
-        self.own_mac = self.default_mac() if args[1] == "default" else args[1]
+        self.own_mac = self.default_mac() if args[0] == "default" else args[0]
 
     params_mut["mac"] = set_mac
 
@@ -220,7 +220,7 @@ class CLI:
     def set_range(self, args):
 
         try:
-            self.range_ = self.default_range() if args[1] == "default" else args[1]
+            self.range_ = self.default_range() if args[0] == "default" else args[0]
 
         # if "args" is empty, no value is specified and "args[0]" will throw an IndexError
         except IndexError as _:
@@ -401,30 +401,30 @@ class CLI:
         
         # return specified host
         try:
-            return self.hosts[int(args[1])]
+            return self.hosts[int(args[0])]
 
-        # if no host is specified, "args[1]" will throw an IndexError
+        # if no host is specified, "args[0]" will throw an IndexError
         except IndexError as _:
             print "E: No host specified"
 
         # input cannot be parsed as integer, try parsing as ip instead
-        except TypeError as _:
+        except ValueError as _:
             return self.get_target_ip(args)
 
         # if host does not exist, "self.hosts[...]" will throw an IndexError
         except KeyError as _:
-            print "E: Host \"{}\" does not exist".format(args[1])
+            print "E: Host \"{}\" does not exist".format(args[0])
 
     # tries to return target specified by ip or mac address
     def get_target_from_addr(self, args):
         
         # return host with specified address, if it exists
         for host in self.hosts:
-            if host.ip == args[1] or host.mac == args[1]:
+            if host.ip == args[0] or host.mac == args[0]:
                 return host
 
         # no host with specified address can be found
-        print "E: Host \"{}\" does not exist".format(args[1])
+        print "E: Host \"{}\" does not exist".format(args[0])
 
     # main arp command, calls subcommands 
     def arp(self, args):
@@ -471,7 +471,7 @@ class CLI:
 
         if target:
             ip_to_spoof, mac_to_spoof = self.arp_set_addrs()
-            target.arp_attack(True, ip_to_spoof, mac_to_spoof)
+            target.arp_oneway(True, ip_to_spoof, mac_to_spoof)
             target.arp_start()
 
         self.prompt()
@@ -483,7 +483,7 @@ class CLI:
         
         if target:
             ip_to_spoof, mac_to_spoof = self.gateway.ip, self.own_mac
-            target.arp_attack(False, ip_to_spoof, mac_to_spoof)
+            target.arp_mitm(False, ip_to_spoof, mac_to_spoof)
             target.arp_start()
 
         self.prompt()
