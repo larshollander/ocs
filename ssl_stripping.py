@@ -14,7 +14,7 @@ class SslRemover(multiprocessing.Process):
         self.queue         = NetfilterQueue()
         self.iprule_add    = "iptables -I FORWARD -p tcp -d {} -j NFQUEUE --queue_num {}".format(ip_victim, queue_num)
         self.iprule_remove = "iptables -D FORWARD -p tcp -d {} -j NFQUEUE --queue_num {}".format(ip_victim, queue_num)
-        self.exit          = False
+        self.exit          = multiprocessing.Event()
 
         self.queue.bind(queue_num, self.handle_packet)
 

