@@ -20,7 +20,7 @@ class DnsPoisoner(multiprocessing.Process):
         self.queue.bind(queue_num, self.handle_packet) 
 
     def add_url(self, url, ip):
-        self.urls_to_spoof[url] = ip
+        self.urls_to_spoof[url] = ip # TODO regex toevoegen
 
     def handle_packet(self, packet_nfqueue):
         """Handles each packet in the queue by editing them if neccessary."""
@@ -40,12 +40,13 @@ class DnsPoisoner(multiprocessing.Process):
                 packet[DNSRR].rdata = self.urls_to_spoof[packet[DNSQR].qname]
             
             if packet[DNSQR].qtype == "AAAA":
-                pass # TODO
+                pass # TODO wat te doen met ipv6?
 
         return packet
 
     def run(self):
 
+        self.exit.clear()
         os.system(self.iprule_add)    #make sure DNS packets are intercepted
         self.queue.run()    #queue starts accepting packages
 

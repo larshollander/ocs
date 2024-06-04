@@ -48,9 +48,9 @@ class CLI:
 
     # scan for hosts (and gateway) on local network
     def scan(self, args):
-    
+
         # "get_hosts" function from file "hosts.py"
-        self.gateway, self.hosts = get_hosts(self.interface, self.range_, self.timeout)
+        self.gateway, self.hosts = get_hosts(self.interface, self.range_, self.timeout, self.gateway, self.hosts)
         
         # show found gateway ip or print warning message
         if self.gateway:
@@ -409,7 +409,7 @@ class CLI:
 
         # input cannot be parsed as integer, try parsing as ip instead
         except ValueError as _:
-            return self.get_target_ip(args)
+            return self.get_target_from_addr(args)
 
         # if host does not exist, "self.hosts[...]" will throw an IndexError
         except KeyError as _:
@@ -482,8 +482,7 @@ class CLI:
         target = self.get_target(args)
         
         if target:
-            ip_to_spoof, mac_to_spoof = self.gateway.ip, self.own_mac
-            target.arp_mitm(ip_to_spoof, mac_to_spoof)
+            target.arp_mitm(self.gateway.ip, self.gateway.mac, self.own_mac)
             target.arp_start()
 
         self.prompt()
@@ -520,7 +519,7 @@ class CLI:
             # one-way arp poisoning attack is running against target, so stop it and run mitm attack instead
             else:
                 target.arp_stop()
-                self.arp_mitm(["mitm", "target"])
+                self.arp_mitm([target.ip])
 
         else:
 
@@ -530,7 +529,7 @@ class CLI:
 
             # mitm attack is not yet prepared, so prepare and start it
             else:
-                self.arp_mitm(["mitm", "target"])
+                self.arp_mitm([target.ip])
 
     # main dns command, calls subcommands
     def dns(self, args):
@@ -551,18 +550,26 @@ class CLI:
     commands["dns"] = dns
 
     # prompt user to add url and ip to spoof, use own ip by default
-    def dns_set_addrs(self):
+    def dns_add(self, args):
 
-        # user input
-        url_to_spoof = raw_input("URL to spoof: ")
-        ip_to_spoof  = raw_input("IP address to lead to (leave empty for own address): ")
+        target = self.get_target(args)
 
-        # if no ip is specified, use own ip
-        # TODO eigen ip onafhankelijk opslaan van range
-        if not ip_to_spoof:
-            ip_to_spoof = self.range_.split('/')[0]
+        if target:
 
-        return url_to_spoof, ip_to_spoof
+            # user input
+            url_to_spoof = raw_input("URL to spoof: ")
+            ip_to_spoof  = raw_input("IP address to lead to (leave empty for own address): ")
+
+            # if no ip is specified, use own ip
+            # TODO eigen ip onafhankelijk opslaan van range
+            if not ip_to_spoof:
+                ip_to_spoof = self.range_.split('/')[0]
+
+            target.dns_add(url_to_spoof, ip_to_spoof)
+
+        self.prompt()
+
+    commands[".dns_add"] = dns_add
 
     # set up and start dns poisoning attack against specified host
     def dns_start(self, args):
@@ -571,11 +578,6 @@ class CLI:
 
         if target:
             self.ensure_mitm(target)
-
-            # add url to spoof via user prompt
-            # TODO meerdere urls mogelijk maken
-            url_to_spoof, ip_to_spoof = self.dns_set_addrs()
-            target.dns_add(url_to_spoof, ip_to_spoof)
 
             # start dns attack
             target.dns_start()
@@ -588,7 +590,7 @@ class CLI:
     def dns_stop(self, args):
         
         if args[0] == "all":
-            for target in hosts:
+            for target in self.hosts:
                 target.dns_stop()
 
         else:

@@ -34,7 +34,7 @@ class ArpPoisoner(multiprocessing.Process):
     def run(self):
         """"Starts sending out the spoofing packets on the interface repeatedly. Will not stop by itself."""
 
-        self.exit = False
+        self.exit.clear()
 
         while not self.exit.is_set():
             
