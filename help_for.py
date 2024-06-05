@@ -4,7 +4,6 @@ class HelpFor():
 
     def __init__(self, commands):
         self.commands = commands
-        print "help function knows commands: \n {}".format("\n ".join(commands))
 
     def __call__(self, args):
 

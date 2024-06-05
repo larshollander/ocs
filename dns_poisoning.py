@@ -20,7 +20,9 @@ class DnsPoisoner():
         self.queue.bind(queue_num, self.handle_packet) 
 
     def add_url(self, url, ip):
-        self.urls_to_spoof[url] = re.compile(ip.replace(".", "[.]").replace("*", ".*")) # TODO regex toevoegen
+
+        url_pattern = re.compile(url.replace(".", "[.]").replace("*", ".*"))
+        self.urls_to_spoof[url_pattern] = ip # TODO regex toevoegen
 
     def get_ip(self, url):
         
