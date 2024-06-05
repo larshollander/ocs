@@ -13,7 +13,7 @@ class Host():
         self.mac            = mac
         self.arp_poisoner   = ArpPoisoner(interface)
         self.arp_attack     = None
-        self.arp_active     = False
+        self.arp_started    = False
         self.dns_poisoner   = DnsPoisoner(ip, dns_queue_num)
         self.ssl_remover    = SslRemover(ip, dns_queue_num + 1)
         self.seen_this_scan = True
@@ -38,14 +38,18 @@ class Host():
     # starts currently prepared arp poisoning attack
     def arp_start(self):
 
-        self.arp_poisoner.start()
-        self.arp_active = True
+        if self.arp_started:
+            self.arp_poisoner.run()
+
+        else:
+            self.arp_poisoner.start()
+
+        self.arp_started = True
 
     # stops currently running arp poisoning attack
     def arp_stop(self):
 
         self.arp_poisoner.stop()
-        self.arp_active = False
 
     def dns_add(self, url, ip):
 

@@ -16,8 +16,14 @@ class CLI:
 
         # enable ip forwarding and store original value to reset upon exiting
         self.ip_forward = os.system("cat /proc/sys/net/ipv4/ip_forward")
-        print "\x1B[F\x1B[2K\x1B[F"
-        os.system("echo 1 > /proc/sys/net/ipv4/ip_forward")
+        self.remove_line()
+        os.system("sysctl -w net.ipv4.ip_forward=1")
+        self.remove_line()
+
+        # set ip forwarding to default accept
+        self.ip_policy = os.system("iptables --list | grep FORWARD | sed 's/.*policy \([A-Z]*\).*/\1/'")
+        os.system("iptables -P FORWARD ACCEPT")
+        self.remove_line()
 
         # parameters based on default gateway
         self.interface = self.default_interface()
@@ -29,11 +35,18 @@ class CLI:
         self.hosts   = []
         self.gateway = None
 
+    def remove_line(self):
+        print "\x1B[F\x1B[2K\x1B[F" 
+
     # main function: store user input in list and call specified command
     # e.g. input 'foo bar baz' calls "self.foo(['bar', 'baz'])"
     def prompt(self):
 
-        args = raw_input(">>> ").split(' ')
+        try:
+            args = raw_input(">>> ").split(' ')
+
+        except KeyboardInterrupt as _:
+            self.quit_([])
     
         # obtain specified function from dict "commands" with key "args[0]" and call it
         try:
@@ -87,7 +100,8 @@ class CLI:
             host.dns_stop()
         
         # reset ip forwarding
-        os.system("echo {} > /proc/sys/net/ipv4/ip_forward".format(self.ip_forward))
+        os.system("sysctl -w net.ipv4.ip_forward={}".format(self.ip_forward))
+        os.system("iptables -P FORWARD {}".format(self.ip_policy))
 
     commands["quit"] = quit_
 
@@ -442,6 +456,8 @@ class CLI:
         except IndexError as _:
             print "E: No command specified"
 
+        self.prompt()
+
     commands["arp"] = arp
 
     # give a prompt to the user to specify addresses for one-way arp poisoning
@@ -474,7 +490,7 @@ class CLI:
             target.arp_oneway(ip_to_spoof, mac_to_spoof)
             target.arp_start()
 
-        self.prompt()
+    commands[".arp_oneway"] = arp_oneway
 
     # prepare and start man-in-the-middle arp poisoning attack agains specified host
     def arp_mitm(self, args):
@@ -485,7 +501,7 @@ class CLI:
             target.arp_mitm(self.gateway.ip, self.gateway.mac, self.own_mac)
             target.arp_start()
 
-        self.prompt()
+    commands[".arp_mitm"]   = arp_mitm
 
     # stops arp poisoning attack against specified host
     def arp_stop(self, args):
@@ -501,16 +517,12 @@ class CLI:
             if target:
                 target.arp_stop()
 
-        self.prompt()
-
-    commands[".arp_oneway"] = arp_oneway
-    commands[".arp_mitm"]   = arp_mitm
     commands[".arp_stop"]   = arp_stop
 
     # ensure that man-in-the-middle arp poisoning attack is running against specified host
     def ensure_mitm(self, target):
         
-        if target.arp_active:
+        if target.arp_poisoner.is_alive():
             
             # mitm attack against target is already running, so do nothing
             if target.arp_attack == "mitm":
@@ -547,6 +559,8 @@ class CLI:
         except IndexError as _:
             print "E: No command specified"
 
+        self.prompt()
+
     commands["dns"] = dns
 
     # prompt user to add url and ip to spoof, use own ip by default
@@ -567,8 +581,6 @@ class CLI:
 
             target.dns_add(url_to_spoof, ip_to_spoof)
 
-        self.prompt()
-
     commands[".dns_add"] = dns_add
 
     # set up and start dns poisoning attack against specified host
@@ -581,8 +593,6 @@ class CLI:
 
             # start dns attack
             target.dns_start()
-
-        self.prompt()
 
     commands[".dns_poison"] = dns_start
 
@@ -599,8 +609,6 @@ class CLI:
 
             if target:
                 target.dns_stop()
-
-        self.prompt()
 
     commands[".dns_stop"] = dns_stop
 
