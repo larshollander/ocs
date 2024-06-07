@@ -15,6 +15,7 @@ class Host():
         self.arp_attack     = None
         self.arp_started    = False
         self.dns_poisoner   = DnsPoisoner(ip, dns_queue_num)
+        self.dns_started    = False
         self.ssl_remover    = SslRemover(ip, dns_queue_num + 1)
         self.seen_this_scan = True
 
@@ -35,6 +36,10 @@ class Host():
         self.arp_poisoner.add_packet(other_mac, gateway_mac, self.ip, gateway_ip)
         self.arp_attack = "mitm"
 
+    def ensure_mitm(self, gateway_ip, gateway_mac, other_mac)
+
+        if self.arp_poisoner.ist_alive()
+
     # starts currently prepared arp poisoning attack
     def arp_start(self):
 
@@ -43,13 +48,14 @@ class Host():
 
         else:
             self.arp_poisoner.start()
-
-        self.arp_started = True
+            self.arp_started = True
 
     # stops currently running arp poisoning attack
     def arp_stop(self):
 
-        self.arp_poisoner.stop()
+        if self.arp_started:
+            self.arp_poisoner.stop()
+            self.arp_started = False
 
     def dns_add(self, url, ip):
 
@@ -57,11 +63,18 @@ class Host():
 
     def dns_start(self):
 
-        self.dns_poisoner.start()
+        if self.dns_started:
+            self.dns_poisoner.run()
+
+        else: 
+            self.dns_poisoner.start()
+            self.dns_started = True
 
     def dns_stop(self):
 
-        self.dns_poisoner.stop()
+        if self.dns_started:
+            self.dns_poisoner.stop()
+            self.dns_started = False
 
     def remove(self):
 

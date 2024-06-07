@@ -1,15 +1,15 @@
 # ocs
 This repository contains a command-line tool to perform ARP poisoning, DNS poisoning and SSL stripping attacks.
 
-## Dependencies:
+## Dependencies
 A linux system using iptables and python 2.7 (e.g. in a virtual environment) are required. 
 Before first use, install the required python packages by:
 ```sh
 # python -m pip install -r requirements.txt
 ```
 
-## Example usage:
-To run the program, use:
+## Example usage
+To start the program, run:
 ```sh
 # python cli.py
 ```
@@ -26,3 +26,9 @@ gateway at 192.168.18.1
 1: host at 192.168.18.3
 2: host at 192.168.18.4
 ```
+
+### ARP poisoning example
+
+### DNS poisoning example
+
+### SSL stripping example
