@@ -27,7 +27,9 @@ class DnsPoisoner():
     def get_ip(self, url):
         
         for url_pattern in self.urls_to_spoof.keys():
-            if url_pattern == url:
+
+            if url_pattern.match(url):
+
                 return self.urls_to_spoof[url_pattern]
 
     def handle_packet(self, packet_nfqueue):

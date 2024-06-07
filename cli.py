@@ -3,6 +3,7 @@ import netifaces
 import os
 
 from hosts import get_hosts
+from help_for import HelpFor
 
 
 class CLI:
@@ -10,14 +11,19 @@ class CLI:
     commands   = {}
     params_all = {}
     params_mut = {}
-    help_for   = {}
 
     def __init__(self):
 
         # enable ip forwarding and store original value to reset upon exiting
         self.ip_forward = os.system("cat /proc/sys/net/ipv4/ip_forward")
-        print "\x1B[F\x1B[2K\x1B[F"
-        os.system("echo 1 > /proc/sys/net/ipv4/ip_forward")
+        self.remove_line()
+        os.system("sysctl -w net.ipv4.ip_forward=1")
+        self.remove_line()
+
+        # set ip forwarding to default accept
+        self.ip_policy = os.system("iptables --list | grep FORWARD | sed 's/.*policy \([A-Z]*\).*/\1/'")
+        os.system("iptables -P FORWARD ACCEPT")
+        self.remove_line()
 
         # parameters based on default gateway
         self.interface = self.default_interface()
@@ -29,12 +35,26 @@ class CLI:
         self.hosts   = []
         self.gateway = None
 
+        # add help functions
+        self.help_for = HelpFor(self.commands, self.params_all, self.params_mut)
+
+    # print a combination of control sequences to clear the last line
+    def remove_line(self):
+        print "\x1B[F\x1B[2K\x1B[F" 
+
     # main function: store user input in list and call specified command
     # e.g. input 'foo bar baz' calls "self.foo(['bar', 'baz'])"
     def prompt(self):
 
-        args = raw_input(">>> ").split(' ')
+        try:
+            args = raw_input(">>> ").split(' ')
+            self.parse(args)
+
+        except KeyboardInterrupt as _:
+            self.quit_([])
     
+    def parse(self, args):
+
         # obtain specified function from dict "commands" with key "args[0]" and call it
         try:
             self.commands[args[0]](self, args[1:])
@@ -48,9 +68,9 @@ class CLI:
 
     # scan for hosts (and gateway) on local network
     def scan(self, args):
-    
+
         # "get_hosts" function from file "hosts.py"
-        self.gateway, self.hosts = get_hosts(self.interface, self.range_, self.timeout)
+        self.gateway, self.hosts = get_hosts(self.interface, self.range_, self.timeout, self.gateway, self.hosts)
         
         # show found gateway ip or print warning message
         if self.gateway:
@@ -78,9 +98,17 @@ class CLI:
 
     commands["os"] = os_
 
-    # reset ip forwarding and quit (by not calling "self.prompt()" again)
+    # stop all attacks and exit
     def quit_(self, _args):
-        os.system("echo {} > /proc/sys/net/ipv4/ip_forward".format(self.ip_forward))
+
+        # stop all attacks
+        for host in self.hosts:
+            host.arp_stop()
+            host.dns_stop()
+        
+        # reset ip forwarding
+        os.system("sysctl -w net.ipv4.ip_forward={}".format(self.ip_forward))
+        os.system("iptables -P FORWARD {}".format(self.ip_policy))
 
     commands["quit"] = quit_
 
@@ -124,22 +152,20 @@ class CLI:
 
     commands["set"] = set_
 
+    # print help for specified command
     def help_(self, args):
 
-        try:
-            self.help_for[args[0]](self, args[1:])
-
-        except KeyError as _:
-            print "E: Unknown command \"{}\"".format(args[0])
-
-        except IndexError as _:
-            print "available commands:"
-            print "\n".join(["    " + command for command in self.commands.keys() if command[0] != '.'])
-            print "use \"help [command]\" for information about a specific command"
-
+        self.help_for(args)
         self.prompt()
 
     commands["help"] = help_
+
+    def list_params(self, _args):
+
+        self.help_for(["params"])
+        self.prompt()
+
+    commands["params"] = list_params
 
     ### show & set functions for specific parameters ###
     
@@ -188,7 +214,7 @@ class CLI:
 
     # manually configure own mac address
     def set_mac(self, args):
-        self.own_mac = self.default_mac() if args[1] == "default" else args[1]
+        self.own_mac = self.default_mac() if args[0] == "default" else args[0]
 
     params_mut["mac"] = set_mac
 
@@ -213,7 +239,7 @@ class CLI:
     def set_range(self, args):
 
         try:
-            self.range_ = self.default_range() if args[1] == "default" else args[1]
+            self.range_ = self.default_range() if args[0] == "default" else args[0]
 
         # if "args" is empty, no value is specified and "args[0]" will throw an IndexError
         except IndexError as _:
@@ -273,119 +299,15 @@ class CLI:
     def show_host(self, args):
         
         try:
-            print "host {}\nip: {}\nmac: {}".format(args[0], self.hosts[args[0]].ip, self.hosts[args[0]].mac)
+            print "host {}\nip: {}\nmac: {}".format(args[0], self.hosts[int(args[0])].ip, self.hosts[int(args[0])].mac)
 
         except KeyError as _:
-            print "E: Host {} does not exist. Use indices to refer to hosts".format(args[0])
+            print "E: Host {} does not exist".format(args[0])
 
         except IndexError as _:
             print "E: No host specified"
 
     params_all["host"] = show_host
-
-    ### help commands ###
-
-    def help_help(self, _args):
-        print "usage: help [command]"
-        print "displays help for specified command"
-
-    help_for["help"] = help_help
-
-    def help_scan(self, _args):
-        print "usage: scan"
-        print "find hosts and gateway specified by range parameter"
-
-    help_for["scan"] = help_scan
-
-    def help_os(self, _args):
-        print "usage: os [command]"
-        print "executes the specified terminal command"
-
-    help_for["os"] = help_os
-
-    def help_quit(self, _args):
-        print "usage: quit"
-        print "exits the program"
-
-    help_for["quit"] = help_quit
-
-    def help_show(self, _args):
-        print "usage: show [parameter]"
-        print "shows the specified parameter"
-
-    help_for["show"] = help_show
-
-    def help_set(self, _args):
-        print "usage: set [parameter] [value]"
-        print "assigns the specified value to the specified parameter"
-
-    help_for["set"] = help_set
-
-    def help_arp(self, args):
-
-        try:
-            self.help_for["arp_" + args[0]](self, args[1:])
-
-        except KeyError as _:
-            print "E: Unknown command \"arp {}\"".format(args[0])
-
-        except IndexError as _:
-            print "usage: arp [command] [host]"
-            print "available commands:"
-            print "\n".join(["    " + command[5:] for command in self.commands.keys() if command[:5] == ".arp_"])
-            print "Use indices to specify hosts. These can be seen with \"show hosts\""
-
-    help_for["arp"] = help_arp
-
-    def help_arp_oneway(self, _args):
-        print "usage: arp oneway [host]"
-        print "starts one-way arp poisoning attack against specified host"
-        print "a prompt will appear to specify the IP address to spoof"
-
-    help_for["arp_oneway"] = help_arp_oneway
-    
-    def help_arp_mitm(self, _args):
-        print "usage: arp mitm [host]"
-        print "starts a man-in-the-middle arp poisoning attack between the specified host and the gateway"
-
-    help_for["arp_mitm"] = help_arp_mitm
-
-    def help_arp_stop(self, _args):
-        print "usage: arp stop [host]"
-        print "stops the arp poisoning attack against the specified host"
-        print "use \"arp stop all\" to stop all currently running arp poisoning attacks"
-
-    help_for["arp_stop"] = help_arp_stop
-
-    def help_dns(self, args):
-
-        try:
-            self.help_for["dns_" + args[0]](self, args[1:])
-
-        except KeyError as _:
-            print "E: Unknown command \"dns {}\"".format(args[0])
-
-        except IndexError as _:
-            print "usage: dns [command] [host]"
-            print "available commands:"
-            print "\n".join(["    " + command[5:] for command in self.commands.keys() if command[:5] == ".dns_"])
-            print "Use indices to specify hosts. These can be seen with \"show hosts\""
-
-    help_for["dns"] = help_dns
-
-    def help_dns_poison(self, _args):
-        print "usage: dns poison [host]"
-        print "starts a dns poisoning attack against the specified host"
-        print "a prompt will appear to specify the URL to spoof"
-
-    help_for["dns_poison"] = help_dns_poison
-
-    def help_dns_stop(self, _args):
-        print "usage: dns stop [host]"
-        print "stops the dns poisoning attack against the specified host"
-        print "use \"dns stop all\" to stop all currently running dns poisoning attacks"
-
-    help_for["dns_stop"] = help_dns_stop
 
     ### commands for attacks ###
 
@@ -394,15 +316,30 @@ class CLI:
         
         # return specified host
         try:
-            return self.hosts[int(args[1])]
+            return self.hosts[int(args[0])]
 
-        # specified input cannot be parsed as integer
-        except TypeError as _:
-            print "E: Could not parse input \"{}\" as integer".format(args[1])
-
-        # if no (or a non-existent) host is specified, "self.hosts[int(args[1])]" will throw an IndexError
+        # if no host is specified, "args[0]" will throw an IndexError
         except IndexError as _:
-            print "E: No or non-existent host specified"
+            print "E: No host specified"
+
+        # input cannot be parsed as integer, try parsing as ip instead
+        except ValueError as _:
+            return self.get_target_from_addr(args)
+
+        # if host does not exist, "self.hosts[...]" will throw an IndexError
+        except KeyError as _:
+            print "E: Host \"{}\" does not exist".format(args[0])
+
+    # tries to return target specified by ip or mac address
+    def get_target_from_addr(self, args):
+        
+        # return host with specified address, if it exists
+        for host in self.hosts:
+            if host.ip == args[0] or host.mac == args[0]:
+                return host
+
+        # no host with specified address can be found
+        print "E: Host \"{}\" does not exist".format(args[0])
 
     # main arp command, calls subcommands 
     def arp(self, args):
@@ -420,6 +357,8 @@ class CLI:
         except IndexError as _:
             print "E: No command specified"
 
+        self.prompt()
+
     commands["arp"] = arp
 
     # give a prompt to the user to specify addresses for one-way arp poisoning
@@ -428,8 +367,12 @@ class CLI:
     def arp_set_addrs(self):
 
         # user input
-        ip_to_spoof  = raw_input("IP address to spoof (leave empty for gateway address): ")
-        mac_to_spoof = raw_input("MAC address to lead to (leave emtpy for own address): ")
+        try:
+            ip_to_spoof  = raw_input("IP address to spoof (leave empty for gateway address): ")
+            mac_to_spoof = raw_input("MAC address to lead to (leave emtpy for own address): ")
+        
+        except KeyboardInterrupt:
+            return None, None
 
         # set "ip_to_spoof" to gateway ip if none specified
         if not ip_to_spoof:
@@ -446,19 +389,30 @@ class CLI:
     def arp_oneway(self, args):
 
         target = self.get_target(args)
-        ip_to_spoof, mac_to_spoof = self.arp_set_addrs()
-        target.arp_attack(True, ip_to_spoof, mac_to_spoof)
-        target.arp_start()
-        self.prompt()
+
+        # read: if specified target is found
+        if target:
+
+            ip_to_spoof, mac_to_spoof = self.arp_set_addrs()
+
+            # do nothing on KeyboardInterrupt
+            if ip_to_spoof:
+                target.arp_oneway(ip_to_spoof, mac_to_spoof)
+                target.arp_start()
+
+    commands[".arp_oneway"] = arp_oneway
 
     # prepare and start man-in-the-middle arp poisoning attack agains specified host
     def arp_mitm(self, args):
 
         target = self.get_target(args)
-        ip_to_spoof, mac_to_spoof = self.gateway.ip, self.own_mac
-        target.arp_attack(False, ip_to_spoof, mac_to_spoof)
-        target.arp_start()
-        self.prompt()
+        
+        # read: if specified target is found
+        if target:
+            target.arp_mitm(self.gateway.ip, self.gateway.mac, self.own_mac)
+            target.arp_start()
+
+    commands[".arp_mitm"]   = arp_mitm
 
     # stops arp poisoning attack against specified host
     def arp_stop(self, args):
@@ -468,38 +422,19 @@ class CLI:
                 target.arp_stop()
 
         else:
+
             target = self.get_target(args)
-            target.arp_stop()
 
-        self.prompt()
+            # read: if specified target is found
+            if target:
+                target.arp_stop()
 
-    commands[".arp_oneway"] = arp_oneway
-    commands[".arp_mitm"]   = arp_mitm
     commands[".arp_stop"]   = arp_stop
 
     # ensure that man-in-the-middle arp poisoning attack is running against specified host
-    def ensure_mitm(self, target):
+    def arp_ensure_mitm(self, target):
         
-        if target.arp_active:
-            
-            # mitm attack against target is already running, so do nothing
-            if target.arp_attack == "mitm":
-                pass
-
-            # one-way arp poisoning attack is running against target, so stop it and run mitm attack instead
-            else:
-                target.arp_stop()
-                self.arp_mitm(["mitm", "target"])
-
-        else:
-
-            # mitm attack is prepared but not running, so just start it
-            if target.arp_attack == "mitm":
-                target.arp_start()
-
-            # mitm attack is not yet prepared, so prepare and start it
-            else:
-                self.arp_mitm(["mitm", "target"])
+        target.arp_ensure_mitm(self.gateway.ip, self.gateway.mac, self.own_mac)
 
     # main dns command, calls subcommands
     def dns(self, args):
@@ -517,37 +452,46 @@ class CLI:
         except IndexError as _:
             print "E: No command specified"
 
+        self.prompt()
+
     commands["dns"] = dns
 
     # prompt user to add url and ip to spoof, use own ip by default
-    def dns_set_addrs(self):
+    def dns_add(self, args):
 
-        # user input
-        url_to_spoof = raw_input("URL to spoof: ")
-        ip_to_spoof  = raw_input("IP address to lead to (leave empty for own address): ")
+        target = self.get_target(args)
 
-        # if no ip is specified, use own ip
-        # TODO eigen ip onafhankelijk opslaan van range
-        if not ip_to_spoof:
-            ip_to_spoof = self.range_.split('/')[0]
+        # read: if specified target is found
+        if target:
 
-        return url_to_spoof, ip_to_spoof
+            # user input
+            try:
+                url_to_spoof = raw_input("URL to spoof: ")
+                ip_to_spoof  = raw_input("IP address to lead to (leave empty for own address): ")
+
+            except KeyboardInterrupt:
+                return
+
+            # if no ip is specified, use own ip
+            # TODO eigen ip onafhankelijk opslaan van range
+            if not ip_to_spoof:
+                ip_to_spoof = self.range_.split('/')[0]
+
+            target.dns_add(url_to_spoof, ip_to_spoof)
+
+    commands[".dns_add"] = dns_add
 
     # set up and start dns poisoning attack against specified host
     def dns_start(self, args):
 
-        # get target and ensure that mi
         target = self.get_target(args)
-        self.ensure_mitm(target)
 
-        # add url to spoof via user prompt
-        # TODO meerdere urls mogelijk maken
-        url_to_spoof, ip_to_spoof = self.dns_set_addrs()
-        target.dns_add(url_to_spoof, ip_to_spoof)
+        # read: if specified target is found
+        if target:
+            self.arp_ensure_mitm(target)
 
-        # start dns attack
-        target.dns_start()
-        self.prompt()
+            # start dns attack
+            target.dns_start()
 
     commands[".dns_poison"] = dns_start
 
@@ -555,13 +499,16 @@ class CLI:
     def dns_stop(self, args):
         
         if args[0] == "all":
-            for target in hosts:
+            for target in self.hosts:
                 target.dns_stop()
 
         else:
+
             target = self.get_target(args)
-            target.dns_stop()
-            self.prompt()
+
+            # read: if specified target is found
+            if target:
+                target.dns_stop()
 
     commands[".dns_stop"] = dns_stop
 

