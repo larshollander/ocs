@@ -38,6 +38,7 @@ class CLI:
         # add help functions
         self.help_for = HelpFor(self.commands)
 
+    # print a combination of control sequences to clear the last line
     def remove_line(self):
         print "\x1B[F\x1B[2K\x1B[F" 
 
@@ -148,6 +149,7 @@ class CLI:
 
     commands["set"] = set_
 
+    # print help for specified command
     def help_(self, args):
 
         self.help_for(args)
@@ -378,10 +380,12 @@ class CLI:
 
         target = self.get_target(args)
 
+        # read: if specified target is found
         if target:
 
             ip_to_spoof, mac_to_spoof = self.arp_set_addrs()
 
+            # do nothing on KeyboardInterrupt
             if ip_to_spoof:
                 target.arp_oneway(ip_to_spoof, mac_to_spoof)
                 target.arp_start()
@@ -393,6 +397,7 @@ class CLI:
 
         target = self.get_target(args)
         
+        # read: if specified target is found
         if target:
             target.arp_mitm(self.gateway.ip, self.gateway.mac, self.own_mac)
             target.arp_start()
@@ -410,6 +415,7 @@ class CLI:
 
             target = self.get_target(args)
 
+            # read: if specified target is found
             if target:
                 target.arp_stop()
 
@@ -464,6 +470,7 @@ class CLI:
 
         target = self.get_target(args)
 
+        # read: if specified target is found
         if target:
 
             # user input
@@ -488,6 +495,7 @@ class CLI:
 
         target = self.get_target(args)
 
+        # read: if specified target is found
         if target:
             self.ensure_mitm(target)
 
@@ -507,6 +515,7 @@ class CLI:
 
             target = self.get_target(args)
 
+            # read: if specified target is found
             if target:
                 target.dns_stop()
 
