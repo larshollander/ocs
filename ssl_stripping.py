@@ -22,7 +22,8 @@ class SslRemover(multiprocessing.Process):
     def handle_packet(self, packet):
         packet_scapy = IP(packet_nfqueue.get_payload())
 
-        if packet_scapy[IP].src == ip_victim:
+        if packet_scapy[IP].src == ip_victim and packet_scapy[IP].dst == self.ip and packet_scapy.haslayer(HTTP):
+            
             
 
         
