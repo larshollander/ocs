@@ -2,7 +2,7 @@
 This repository contains a command-line tool to perform ARP poisoning, DNS poisoning and SSL stripping attacks.
 
 ## Dependencies
-A linux system using iptables and python 2.7 (e.g. in a virtual environment) are required. 
+A linux system using iptables and sysctl is required, as well as python 2.7 (e.g. in a virtual environment). 
 Before first use, install the required python packages by:
 ```
 # python -m pip install -r requirements.txt

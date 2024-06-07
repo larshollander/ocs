@@ -128,7 +128,7 @@ class HelpFor():
         print "usage: dns add [host]"
         print "add a url/ip combination to spoof"
         print "a prompt will appear to specify both"
-        print "wildcards are permitted, e.g. \"*.google.*\""
+        print "wildcards are permitted, e.g. \"*.google.com\""
 
     help_for["dns_add"] = help_dns_add
 

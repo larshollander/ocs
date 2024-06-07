@@ -48,10 +48,13 @@ class CLI:
 
         try:
             args = raw_input(">>> ").split(' ')
+            self.parse(args)
 
         except KeyboardInterrupt as _:
             self.quit_([])
     
+    def parse(self, args):
+
         # obtain specified function from dict "commands" with key "args[0]" and call it
         try:
             self.commands[args[0]](self, args[1:])
