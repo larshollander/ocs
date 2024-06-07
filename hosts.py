@@ -92,8 +92,8 @@ def get_hosts(interface, range_, timeout, gateway, hosts):
     packet  = Ether(dst="ff:ff:ff:ff:ff:ff")/ARP(pdst=range_)
 
     # send the packet and store replies
-    results = srp(packet, timeout=timeout, iface=interface, verbose=1)[0]
-    replies = [result.answer[ARP] for result in results]
+    results = srp(packet, timeout=timeout, iface=interface, verbose=0)[0]
+    replies = [result[1][ARP] for result in results]
 
     for reply in replies:
 
