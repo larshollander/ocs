@@ -355,8 +355,12 @@ class CLI:
     def arp_set_addrs(self):
 
         # user input
-        ip_to_spoof  = raw_input("IP address to spoof (leave empty for gateway address): ")
-        mac_to_spoof = raw_input("MAC address to lead to (leave emtpy for own address): ")
+        try:
+            ip_to_spoof  = raw_input("IP address to spoof (leave empty for gateway address): ")
+            mac_to_spoof = raw_input("MAC address to lead to (leave emtpy for own address): ")
+        
+        except KeyboardInterrupt:
+            return None, None
 
         # set "ip_to_spoof" to gateway ip if none specified
         if not ip_to_spoof:
@@ -375,9 +379,12 @@ class CLI:
         target = self.get_target(args)
 
         if target:
+
             ip_to_spoof, mac_to_spoof = self.arp_set_addrs()
-            target.arp_oneway(ip_to_spoof, mac_to_spoof)
-            target.arp_start()
+
+            if ip_to_spoof:
+                target.arp_oneway(ip_to_spoof, mac_to_spoof)
+                target.arp_start()
 
     commands[".arp_oneway"] = arp_oneway
 
@@ -460,8 +467,12 @@ class CLI:
         if target:
 
             # user input
-            url_to_spoof = raw_input("URL to spoof: ")
-            ip_to_spoof  = raw_input("IP address to lead to (leave empty for own address): ")
+            try:
+                url_to_spoof = raw_input("URL to spoof: ")
+                ip_to_spoof  = raw_input("IP address to lead to (leave empty for own address): ")
+
+            except KeyboardInterrupt:
+                return
 
             # if no ip is specified, use own ip
             # TODO eigen ip onafhankelijk opslaan van range
