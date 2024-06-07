@@ -429,28 +429,9 @@ class CLI:
     commands[".arp_stop"]   = arp_stop
 
     # ensure that man-in-the-middle arp poisoning attack is running against specified host
-    def ensure_mitm(self, target):
+    def arp_ensure_mitm(self, target):
         
-        if target.arp_poisoner.is_alive():
-            
-            # mitm attack against target is already running, so do nothing
-            if target.arp_attack == "mitm":
-                pass
-
-            # one-way arp poisoning attack is running against target, so stop it and run mitm attack instead
-            else:
-                target.arp_stop()
-                self.arp_mitm([target.ip])
-
-        else:
-
-            # mitm attack is prepared but not running, so just start it
-            if target.arp_attack == "mitm":
-                target.arp_start()
-
-            # mitm attack is not yet prepared, so prepare and start it
-            else:
-                self.arp_mitm([target.ip])
+        target.arp_ensure_mitm(self.gateway.ip, self.gateway.mac, self.own_mac)
 
     # main dns command, calls subcommands
     def dns(self, args):
@@ -504,7 +485,7 @@ class CLI:
 
         # read: if specified target is found
         if target:
-            self.ensure_mitm(target)
+            self.arp_ensure_mitm(target)
 
             # start dns attack
             target.dns_start()

