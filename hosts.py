@@ -75,7 +75,7 @@ def get_hosts(interface, range_, timeout):
 
     # send the packet and store replies
     results = srp(packet, timeout=timeout, iface=interface, verbose=0)[0]
-    replies = [result.answer[ARP] for result in results]
+    replies = [result[ARP] for result in results[0]]
 
     for reply in replies:
 
