@@ -2,8 +2,10 @@ class HelpFor():
 
     help_for = {}
 
-    def __init__(self, commands):
-        self.commands = commands
+    def __init__(self, commands, params_all, params_mut):
+        self.commands   = sorted(commands)
+        self.params_mut = sorted(params_mut)
+        self.params_imm = sorted([key for key in params_all.keys() if not key in params_mut])
 
     def __call__(self, args):
 
@@ -15,8 +17,18 @@ class HelpFor():
 
         except IndexError as _:
             print "available commands:"
-            print "\n".join([" " + command for command in self.commands.keys() if command[0] != '.'])
+            print "\n".join([" " + command for command in self.commands if command[0] != '.'])
             print "use \"help [command]\" for information about a specific command"
+
+    ### list parameters ###
+
+    def list_params(self, _args):
+        print "mutable parameters:"
+        print "\n".join([" " + param for param in self.params_mut])
+        print "immutable parameters:"
+        print "\n".join([" " + param for param in self.params_imm])
+
+    help_for["params"] = list_params
 
     ### help commands ###
 
@@ -25,6 +37,10 @@ class HelpFor():
         print "displays help for specified command"
 
     help_for["help"] = help_help
+
+    def help_params(self, _args):
+        print "usage: params"
+        print "lists available parameters"
 
     def help_scan(self, _args):
         print "usage: scan"
@@ -67,7 +83,7 @@ class HelpFor():
         except IndexError as _:
             print "usage: arp [command] [host]"
             print "available commands:"
-            print "\n".join([" " + command[5:] for command in self.commands.keys() if command[:5] == ".arp_"])
+            print "\n".join([" " + command[5:] for command in self.commands if command[:5] == ".arp_"])
             print "host can be specified by index or address"
 
     help_for["arp"] = help_arp
@@ -103,7 +119,7 @@ class HelpFor():
         except IndexError as _:
             print "usage: dns [command] [host]"
             print "available commands:"
-            print "\n".join([" " + command[5:] for command in self.commands.keys() if command[:5] == ".dns_"])
+            print "\n".join([" " + command[5:] for command in self.commands if command[:5] == ".dns_"])
             print "host can be specified by index or address"
 
     help_for["dns"] = help_dns

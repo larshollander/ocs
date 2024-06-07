@@ -36,7 +36,7 @@ class CLI:
         self.gateway = None
 
         # add help functions
-        self.help_for = HelpFor(self.commands)
+        self.help_for = HelpFor(self.commands, self.params_all, self.params_mut)
 
     # print a combination of control sequences to clear the last line
     def remove_line(self):
@@ -156,6 +156,13 @@ class CLI:
         self.prompt()
 
     commands["help"] = help_
+
+    def list_params(self, _args):
+
+        self.help_for(["params"])
+        self.prompt()
+
+    commands["params"] = list_params
 
     ### show & set functions for specific parameters ###
     
