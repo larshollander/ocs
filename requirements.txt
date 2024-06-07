@@ -1,0 +1,4 @@
+scapy == 2.4.5
+NetfilterQueue == 0.9.0
+netifaces == 0.11.0
+cryptography == 3.3.2
