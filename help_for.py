@@ -15,7 +15,7 @@ class HelpFor():
 
         except IndexError as _:
             print "available commands:"
-            print "\n".join(["    " + command for command in self.commands.keys() if command[0] != '.'])
+            print "\n".join([" " + command for command in self.commands.keys() if command[0] != '.'])
             print "use \"help [command]\" for information about a specific command"
 
     ### help commands ###
@@ -67,7 +67,7 @@ class HelpFor():
         except IndexError as _:
             print "usage: arp [command] [host]"
             print "available commands:"
-            print "\n".join(["    " + command[5:] for command in self.commands.keys() if command[:5] == ".arp_"])
+            print "\n".join([" " + command[5:] for command in self.commands.keys() if command[:5] == ".arp_"])
             print "host can be specified by index or address"
 
     help_for["arp"] = help_arp
@@ -103,15 +103,22 @@ class HelpFor():
         except IndexError as _:
             print "usage: dns [command] [host]"
             print "available commands:"
-            print "\n".join(["    " + command[5:] for command in self.commands.keys() if command[:5] == ".dns_"])
+            print "\n".join([" " + command[5:] for command in self.commands.keys() if command[:5] == ".dns_"])
             print "host can be specified by index or address"
 
     help_for["dns"] = help_dns
 
+    def help_dns_add(self, _args):
+        print "usage: dns add [host]"
+        print "add a url/ip combination to spoof"
+        print "a prompt will appear to specify both"
+        print "wildcards are permitted, e.g. \"*.google.*\""
+
+    help_for["dns_add"] = help_dns_add
+
     def help_dns_poison(self, _args):
         print "usage: dns poison [host]"
         print "starts a dns poisoning attack against the specified host"
-        print "a prompt will appear to specify the URL to spoof"
 
     help_for["dns_poison"] = help_dns_poison
 
