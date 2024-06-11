@@ -37,7 +37,6 @@ class DnsPoisoner():
         packet_scapy = IP(packet_nfqueue.get_payload())    #converts the raw packet to a scapy compatible string
 
         if packet_scapy.haslayer(DNSRR):
-            print "Packet has DNSRR"
             packet_scapy = self.edit_dnsrr(packet_scapy)    #edit packet for spoof
             packet_nfqueue.set_payload(bytes(packet_scapy))    #converts scapy compatible string back to raw packet
 
