@@ -36,8 +36,9 @@ class CLI:
         self.gateway = None
 
         # add help functions
-        self.help_for = HelpFor(self.commands)
+        self.help_for = HelpFor(self.commands, self.params_all, self.params_mut)
 
+    # print a combination of control sequences to clear the last line
     def remove_line(self):
         print "\x1B[F\x1B[2K\x1B[F" 
 
@@ -47,10 +48,13 @@ class CLI:
 
         try:
             args = raw_input(">>> ").split(' ')
+            self.parse(args)
 
         except KeyboardInterrupt as _:
             self.quit_([])
     
+    def parse(self, args):
+
         # obtain specified function from dict "commands" with key "args[0]" and call it
         try:
             self.commands[args[0]](self, args[1:])
@@ -148,12 +152,20 @@ class CLI:
 
     commands["set"] = set_
 
+    # print help for specified command
     def help_(self, args):
 
         self.help_for(args)
         self.prompt()
 
     commands["help"] = help_
+
+    def list_params(self, _args):
+
+        self.help_for(["params"])
+        self.prompt()
+
+    commands["params"] = list_params
 
     ### show & set functions for specific parameters ###
     
@@ -355,8 +367,12 @@ class CLI:
     def arp_set_addrs(self):
 
         # user input
-        ip_to_spoof  = raw_input("IP address to spoof (leave empty for gateway address): ")
-        mac_to_spoof = raw_input("MAC address to lead to (leave emtpy for own address): ")
+        try:
+            ip_to_spoof  = raw_input("IP address to spoof (leave empty for gateway address): ")
+            mac_to_spoof = raw_input("MAC address to lead to (leave emtpy for own address): ")
+        
+        except KeyboardInterrupt:
+            return None, None
 
         # set "ip_to_spoof" to gateway ip if none specified
         if not ip_to_spoof:
@@ -374,10 +390,15 @@ class CLI:
 
         target = self.get_target(args)
 
+        # read: if specified target is found
         if target:
+
             ip_to_spoof, mac_to_spoof = self.arp_set_addrs()
-            target.arp_oneway(ip_to_spoof, mac_to_spoof)
-            target.arp_start()
+
+            # do nothing on KeyboardInterrupt
+            if ip_to_spoof:
+                target.arp_oneway(ip_to_spoof, mac_to_spoof)
+                target.arp_start()
 
     commands[".arp_oneway"] = arp_oneway
 
@@ -386,6 +407,7 @@ class CLI:
 
         target = self.get_target(args)
         
+        # read: if specified target is found
         if target:
             target.arp_mitm(self.gateway.ip, self.gateway.mac, self.own_mac)
             target.arp_start()
@@ -403,34 +425,16 @@ class CLI:
 
             target = self.get_target(args)
 
+            # read: if specified target is found
             if target:
                 target.arp_stop()
 
     commands[".arp_stop"]   = arp_stop
 
     # ensure that man-in-the-middle arp poisoning attack is running against specified host
-    def ensure_mitm(self, target):
+    def arp_ensure_mitm(self, target):
         
-        if target.arp_poisoner.is_alive():
-            
-            # mitm attack against target is already running, so do nothing
-            if target.arp_attack == "mitm":
-                pass
-
-            # one-way arp poisoning attack is running against target, so stop it and run mitm attack instead
-            else:
-                target.arp_stop()
-                self.arp_mitm([target.ip])
-
-        else:
-
-            # mitm attack is prepared but not running, so just start it
-            if target.arp_attack == "mitm":
-                target.arp_start()
-
-            # mitm attack is not yet prepared, so prepare and start it
-            else:
-                self.arp_mitm([target.ip])
+        target.arp_ensure_mitm(self.gateway.ip, self.gateway.mac, self.own_mac)
 
     # main dns command, calls subcommands
     def dns(self, args):
@@ -457,11 +461,16 @@ class CLI:
 
         target = self.get_target(args)
 
+        # read: if specified target is found
         if target:
 
             # user input
-            url_to_spoof = raw_input("URL to spoof: ")
-            ip_to_spoof  = raw_input("IP address to lead to (leave empty for own address): ")
+            try:
+                url_to_spoof = raw_input("URL to spoof: ")
+                ip_to_spoof  = raw_input("IP address to lead to (leave empty for own address): ")
+
+            except KeyboardInterrupt:
+                return
 
             # if no ip is specified, use own ip
             # TODO eigen ip onafhankelijk opslaan van range
@@ -477,8 +486,9 @@ class CLI:
 
         target = self.get_target(args)
 
+        # read: if specified target is found
         if target:
-            self.ensure_mitm(target)
+            self.arp_ensure_mitm(target)
 
             # start dns attack
             target.dns_start()
@@ -496,57 +506,11 @@ class CLI:
 
             target = self.get_target(args)
 
+            # read: if specified target is found
             if target:
                 target.dns_stop()
 
     commands[".dns_stop"] = dns_stop
-
-    def ssl(self, args):
-
-        # obtain and call function specified by subcommand
-        # e.g. "dns poison foo" calls ".dns_poison(['foo'])"
-        try: 
-            self.commands[".ssl_" + args[0]](self, args[1:])
-    
-        # if unknown command is specified, "self.commands['.dns_' + args[0]]" will throw a KeyError
-        except KeyError as _:
-            print "E: Unknown command \"ssl {}\"".format(args[0])
-
-        # if no command is specified, "args[0]" will throw an IndexError
-        except IndexError as _:
-            print "E: No command specified"
-
-        self.prompt()
-
-    commands["ssl"] = ssl
-
-    # set up and start dns poisoning attack against specified host
-    def ssl_start(self, args):
-
-        target = self.get_target(args)
-
-        if target:
-            self.ensure_mitm(target)
-
-            # start dns attack
-            target.ssl_start()
-
-    commands[".ssl_strip"] = ssl_start
-
-    def ssl_stop(self, args):
-        
-        if args[0] == "all":
-            for target in self.hosts:
-                target.ssl_stop()
-
-        else:
-
-            target = self.get_target(args)
-
-            if target:
-                target.ssl_stop()
-
-    commands[".ssl_stop"] = ssl_stop
 
 # create and start cli
 if __name__ == "__main__":
