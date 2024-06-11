@@ -363,7 +363,6 @@ class CLI:
 
     # give a prompt to the user to specify addresses for one-way arp poisoning
     # not needed for mitm attack as the gateway is used there
-    # TODO kun je ueberhaupt een andere mac gebruiken?
     def arp_set_addrs(self):
 
         # user input
