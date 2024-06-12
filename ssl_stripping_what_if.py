@@ -8,10 +8,10 @@ from scapy.all import *
 #from scapy.layers.ssl_tls import *
 import os
 import threading
-import cryptography    #required for tls
+import cryptography    #required for tls version needs to be >= 1.7 and < 42.0.0
 
-#load_layer("tls")    #enables tls for the https connection with the server
-#load_layer("http")    #also useful
+load_layer("tls")    #enables tls for the https connection with the server
+load_layer("http")    #also useful
 
 class SslRemover():
 
@@ -116,6 +116,12 @@ class SslRemover():
             #send(response_packet)
             print "Response packet made"
 
+            if not self.connected_tls:
+                start_tls_automaton(ip_layer.dst)
+                
+            send_and_receive_https(packet_nfqueue)
+            return True    #placeholder to exit function
+            
         return packet_nfqueue.accept()
 
     def start(self):
