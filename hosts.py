@@ -48,7 +48,7 @@ class Host():
 
             # one-way attack is running, so stop it and run mitm attack instead
             else:
-                self.arp_stop()
+                self.arp_pause()
                 self.arp_mitm(gateway_ip, gateway_mac, other_mac)
                 self.arp_start()
 
@@ -66,17 +66,20 @@ class Host():
     def arp_start(self):
 
         if self.arp_started:
-            self.arp_poisoner.run()
+            self.arp_poisoner.go()
 
         else:
             self.arp_poisoner.start()
             self.arp_started = True
 
     # stops currently running arp poisoning attack
-    def arp_stop(self):
+    def arp_pause(self):
 
-        if self.arp_started:
-            self.arp_poisoner.stop()
+	self.arp_poisoner.pause()
+
+    def arp_stop(self):
+ 
+        self.arp_poisoner.stop()
 
     def dns_add(self, url, ip):
 
@@ -105,8 +108,7 @@ class Host():
 
     def dns_stop(self):
 
-        if self.dns_started:
-            self.dns_poisoner.stop()
+        self.dns_poisoner.stop()
 
     def remove(self):
 

