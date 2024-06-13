@@ -442,7 +442,7 @@ class CLI:
     # restores the arp tables of the specified host to its pre-spoof state
     def arp_restore(self, target):
 
-        target.arp_ensure_mitm(self.gateway.ip, self.gateway.mac, self.own_mac)
+        target.arp_restore(self.own_mac, mac_gateway, ip_gateway)
 
     commands[".arp_restore"]   = arp_restore
 
