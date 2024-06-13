@@ -97,7 +97,7 @@ def test_cb():
 
     ip_victim = "10.0.123.5"
     ip_to_spoof = "10.0.123.4"
-    url_to_spoof = "*.google.com"
+    url_to_spoof = "*"
 
     dns_poisoner = DnsPoisoner(ip_victim, 1)
     dns_poisoner.add_url(url_to_spoof, ip_to_spoof)
