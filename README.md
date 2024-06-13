@@ -27,7 +27,11 @@ gateway at 192.168.18.1
 2: host at 192.168.18.4
 ```
 
+Now that we have the available hosts scanned, we can perform ARP poisoning and DNS poisoning attacks, with SSL stripping capabilities.
+
 ### ARP poisoning example
+
+
 
 ### DNS poisoning example
 
