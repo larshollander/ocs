@@ -476,7 +476,6 @@ class CLI:
                 return
 
             # if no ip is specified, use own ip
-            # TODO eigen ip onafhankelijk opslaan van range
             if not ip_to_spoof:
                 ip_to_spoof = self.range_.split('/')[0]
 
