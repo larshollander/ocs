@@ -418,11 +418,11 @@ class CLI:
     commands[".arp_mitm"]   = arp_mitm
 
     # stops arp poisoning attack against specified host
-    def arp_pause(self, args):
+    def arp_stop(self, args):
 
         if args[0] == "all":
             for target in self.hosts:
-                target.arp_pause()
+                target.arp_stop()
 
         else:
 
@@ -430,9 +430,9 @@ class CLI:
 
             # read: if specified target is found
             if target:
-                target.arp_pause()
+                target.arp_stop()
 
-    commands[".arp_stop"]   = arp_pause
+    commands[".arp_stop"]   = arp_stop
 
     # ensure that man-in-the-middle arp poisoning attack is running against specified host
     def arp_ensure_mitm(self, target):
@@ -441,8 +441,11 @@ class CLI:
 
     # restores the arp tables of the specified host to its pre-spoof state
     def arp_restore(self, args):
+        
         target = self.get_target(args)
-        target.arp_restore(self.own_mac, mac_gateway, ip_gateway)
+
+        if target:
+            target.arp_restore(self.own_mac, self.gateway.ip, self.gateway.ip)
 
     commands[".arp_restore"]   = arp_restore
 
