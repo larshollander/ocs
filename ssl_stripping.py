@@ -36,6 +36,7 @@ class SslRemover():
             del packet_scapy[HTTPResponse].X_Frame_Options
 
             packet_nfqueue.set_payload(bytes(packet_scapy))
+            
         return packet_nfqueue.accept() #accept the packet and release it back into the wild
         
       
