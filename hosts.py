@@ -83,6 +83,14 @@ class Host():
 
         self.dns_poisoner.add_url(url, ip)
 
+    def dns_ensure(self, ip):
+
+        if self.dns_started:
+            
+            self.dns_stop()
+            self.dns_add("*", ip)
+            self.dns_start()
+
     def dns_start(self):
 
         if self.dns_started:
@@ -96,7 +104,6 @@ class Host():
 
         if self.dns_started:
             self.dns_poisoner.stop()
-            self.dns_started = False
 
     def remove(self):
 
@@ -147,7 +154,7 @@ def get_hosts(interface, range_, timeout, gateway, hosts):
 
             # store other ip's in the list of hosts
             else:
-                hosts.append(Host(reply.psrc, reply.hwsrc, interface, 2*(len(hosts) + 1) ))
+                hosts.append(Host(reply.psrc, reply.hwsrc, interface, 3*(len(hosts) + 1) ))
 
     gateway = gateway if gateway.seen_this_scan else None
     hosts   = [host for host in hosts if host.seen_this_scan]

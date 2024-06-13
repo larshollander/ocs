@@ -511,6 +511,33 @@ class CLI:
 
     commands[".dns_stop"] = dns_stop
 
+    def dns_ensure(self, target):
+
+        target.dns_ensure(self.ip)
+
+    commands[".dns_ensure"] = dns_ensure
+
+    def ssl(self, args):
+
+        try:
+            self.commands[".ssl_" + args[0]](self, args[1:])
+
+        except KeyError as _:
+            print "E: Unknown command \"ssl {}\"".format(args[0])
+
+        except IndexError as _:
+            print "E: No command specified"
+
+        self.prompt()
+
+    def ssl_start(self, args):
+
+        target = self.get_target(args)
+
+        if target:
+            self.dns_ensure(target)
+            target.ssl_start()
+
 # create and start cli
 if __name__ == "__main__":
 
