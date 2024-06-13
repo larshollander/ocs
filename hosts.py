@@ -74,12 +74,12 @@ class Host():
             self.arp_started = True
 
     # restores arp packets to before their original pre-spoof state
-    def arp_restore(self, mac_attacker, mac_victim, ip_victim, mac_gateway, ip_gateway):
+    def arp_restore(self, mac_attacker, mac_gateway, ip_gateway):
 
         if self.arp_started:
             print "Please stop running the current arp poisoning attack"
         else:
-            self.arp_poisoner.restore_arp(mac_attacker, mac_victim, ip_victim, mac_gateway, ip_gateway)
+            self.arp_poisoner.restore_arp(mac_attacker, self.mac, self.ip, mac_gateway, ip_gateway)
 
     # stops currently running arp poisoning attack
     def arp_stop(self):
