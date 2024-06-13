@@ -110,6 +110,9 @@ class CLI:
         os.system("sysctl -w net.ipv4.ip_forward={}".format(self.ip_forward))
         self.remove_line()
         os.system("iptables -P FORWARD {}".format(self.ip_policy))
+        self.remove_line()
+        
+        exit()
 
     commands["quit"] = quit_
 
@@ -415,11 +418,11 @@ class CLI:
     commands[".arp_mitm"]   = arp_mitm
 
     # stops arp poisoning attack against specified host
-    def arp_stop(self, args):
+    def arp_pause(self, args):
 
         if args[0] == "all":
             for target in self.hosts:
-                target.arp_stop()
+                target.arp_pause()
 
         else:
 
@@ -427,9 +430,9 @@ class CLI:
 
             # read: if specified target is found
             if target:
-                target.arp_stop()
+                target.arp_pause()
 
-    commands[".arp_stop"]   = arp_stop
+    commands[".arp_stop"]   = arp_pause
 
     # ensure that man-in-the-middle arp poisoning attack is running against specified host
     def arp_ensure_mitm(self, target):

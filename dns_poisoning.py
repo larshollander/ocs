@@ -102,8 +102,8 @@ def test_cb():
 
     arp_poisoning.test()
 
-    ip_victim = "10.0.123.5"
-    ip_to_spoof = "10.0.123.4"
+    ip_victim = "10.0.123.4"
+    ip_to_spoof = "10.0.123.5"
     url_to_spoof = "*"
 
     dns_poisoner = DnsPoisoner(ip_victim, 1)
