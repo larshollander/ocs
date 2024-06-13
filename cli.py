@@ -527,8 +527,6 @@ class CLI:
 
         target.dns_ensure(self.ip)
 
-    commands[".dns_ensure"] = dns_ensure
-
     def ssl(self, args):
 
         try:

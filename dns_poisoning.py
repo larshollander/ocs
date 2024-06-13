@@ -113,4 +113,8 @@ def test():
 
 if __name__ == "__main__":
 
+    import os
+    os.system("sysctl -w net.ipv4.ip_forward=1")
+    os.system("iptables -P FORWARD ACCEPT")
+
     test()
