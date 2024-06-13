@@ -1,5 +1,6 @@
 scapy == 2.4.5
 scapy-http == 1.8.2
 NetfilterQueue == 0.9.0
+sslstrip == 0.9.0
 netifaces == 0.11.0
 cryptography == 3.3.2
