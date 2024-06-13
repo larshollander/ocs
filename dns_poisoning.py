@@ -84,6 +84,13 @@ class DnsPoisoner():
 
         print "DNS poisoning attack started"
 
+    def run(self):
+
+        os.system(self.iprule_add)
+        self.thread.run()
+
+        print "DNS poisoning attack started"
+
     def stop(self):
 
         os.system(self.iprule_remove)    #make sure DNS packets are not intercepted anymore
