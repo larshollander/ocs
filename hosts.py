@@ -16,7 +16,7 @@ class Host():
         self.arp_started    = False
         self.dns_poisoner   = DnsPoisoner(ip, dns_queue_num)
         self.dns_started    = False
-        self.ssl_remover    = SslRemover(ip, dns_queue_num + 1)
+        self.ssl_remover    = SslRemover(dns_queue_num + 1)
         self.ssl_started    = False
         self.seen_this_scan = True
 
