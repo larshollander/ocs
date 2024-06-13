@@ -73,9 +73,10 @@ class Host():
             self.arp_started = True
 
     # stops currently running arp poisoning attack
-    def arp_stop(self, ):
+    def arp_stop(self, mac_attacker, mac_victim, ip_victim, mac_gateway, ip_gateway):
 
         if self.arp_started:
+            self.arp_poisoner.restore_arp(mac_attacker, mac_victim, ip_victim, mac_gateway, ip_gateway)
             self.arp_poisoner.stop()
 
     def dns_add(self, url, ip):
