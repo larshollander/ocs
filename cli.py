@@ -108,6 +108,7 @@ class CLI:
         
         # reset ip forwarding
         os.system("sysctl -w net.ipv4.ip_forward={}".format(self.ip_forward))
+        self.remove_line()
         os.system("iptables -P FORWARD {}".format(self.ip_policy))
 
     commands["quit"] = quit_
@@ -479,6 +480,17 @@ class CLI:
             target.dns_add(url_to_spoof, ip_to_spoof)
 
     commands[".dns_add"] = dns_add
+
+    def dns_clean(self, args):
+
+        target = self.get_target(args)
+
+        # read: if specified target is found
+        if target:
+            
+            target.dns_clean()
+
+    commands[".dns_clean"] = dns_clean
 
     # set up and start dns poisoning attack against specified host
     def dns_start(self, args):

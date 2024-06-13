@@ -132,6 +132,12 @@ class HelpFor():
 
     help_for["dns_add"] = help_dns_add
 
+    def help_dns_clean(self, _args):
+        print "usage: dns clean [host]"
+        print "remove all url/ip combinations to spoof"
+
+    help_for["dns_clean"] = help_dns_clean
+
     def help_dns_poison(self, _args):
         print "usage: dns poison [host]"
         print "starts a dns poisoning attack against the specified host"

@@ -83,6 +83,10 @@ class Host():
 
         self.dns_poisoner.add_url(url, ip)
 
+    def dns_clean(self):
+
+        self.dns_poisoner.clean_urls()
+
     def dns_start(self):
 
         if self.dns_started:

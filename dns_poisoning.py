@@ -26,6 +26,10 @@ class DnsPoisoner():
         url_pattern = re.compile(url.replace(".", "[.]").replace("*", ".*"))
         self.urls_to_spoof[url_pattern] = ip
 
+    def clean_urls(self):
+
+        self.urls_to_spoof = {}
+
     def get_ip(self, url):
         
         for url_pattern in self.urls_to_spoof.keys():
