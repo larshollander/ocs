@@ -11,7 +11,7 @@ import threading
 import cryptography    #required for tls version needs to be >= 1.7 and < 42.0.0
 
 load_layer("tls")    #enables tls for the https connection with the server
-load_layer("http")    #also useful
+load_layer("http")    #also useful, possibly redundant
 
 class SslRemover():
 
