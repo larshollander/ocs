@@ -77,7 +77,6 @@ class Host():
 
         if self.arp_started:
             self.arp_poisoner.stop()
-            self.arp_started = False
 
     def dns_add(self, url, ip):
 

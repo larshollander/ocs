@@ -2,6 +2,7 @@ from scapy.all import *
 import multiprocessing
 import threading
 import time
+import os
 
 class ArpPoisoner(multiprocessing.Process):
 
@@ -50,7 +51,7 @@ class ArpPoisoner(multiprocessing.Process):
         self.exit.set()
 
 def test_cb():
-    
+
     arp_poisoner = ArpPoisoner("enp0s10")
 
     mac_attacker = "08:00:27:52:b1:13"
@@ -78,5 +79,9 @@ def test():
     thread.run()
 
 if __name__ == "__main__":
+
+    import os
+    os.system("sysctl -w net.ipv4.ip_forward=1")
+    os.system("iptables -P FORWARD ACCEPT")
 
     test()

