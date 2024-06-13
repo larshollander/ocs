@@ -440,8 +440,8 @@ class CLI:
         target.arp_ensure_mitm(self.gateway.ip, self.gateway.mac, self.own_mac)
 
     # restores the arp tables of the specified host to its pre-spoof state
-    def arp_restore(self, target):
-
+    def arp_restore(self, args):
+        target = self.get_target(args)
         target.arp_restore(self.own_mac, mac_gateway, ip_gateway)
 
     commands[".arp_restore"]   = arp_restore
@@ -483,7 +483,6 @@ class CLI:
                 return
 
             # if no ip is specified, use own ip
-            # TODO eigen ip onafhankelijk opslaan van range
             if not ip_to_spoof:
                 ip_to_spoof = self.range_.split('/')[0]
 
@@ -562,7 +561,7 @@ class CLI:
         target = self.get_target(args)
 
         if target:
-            self.ensure_mitm(target)
+            self.arp_ensure_mitm(target)
 
             # start dns attack
             target.ssl_start()
