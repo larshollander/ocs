@@ -101,6 +101,13 @@ class HelpFor():
 
     help_for["arp_mitm"] = help_arp_mitm
 
+    def help_arp_restore(self, _args):
+        print "usage: arp resotre [host]"
+        print "restores the arp table of the specified host to its pre-spoof state"
+        print "use after stopping all currently running arp poisoning attacks"
+
+    help_for["arp_restore"] = help_arp_restore
+
     def help_arp_stop(self, _args):
         print "usage: arp stop [host]"
         print "stops the arp poisoning attack against the specified host"
@@ -144,3 +151,32 @@ class HelpFor():
         print "use \"dns stop all\" to stop all currently running dns poisoning attacks"
 
     help_for["dns_stop"] = help_dns_stop
+
+    def help_ssl(self, args):
+
+        try:
+            self.help_for["ssl_" + args[0]](self, args[1:])
+
+        except KeyError as _:
+            print "E: Unknown command \"ssl {}\"".format(args[0])
+
+        except IndexError as _:
+            print "usage: ssl [command] [host]"
+            print "available commands:"
+            print "\n".join(["    " + command[5:] for command in self.commands.keys() if command[:5] == ".ssl_"])
+            print "host can be specified by index or address"
+
+    help_for["ssl"] = help_ssl
+
+    def help_ssl_strip(self, _args):
+        print "usage: ssl strip [host]"
+        print "starts ssl stripping against the specified host"
+
+    help_for["ssl_strip"] = help_ssl_strip
+
+    def help_ssl_stop(self, _args):
+        print "usage: ssl stop [host]"
+        print "stops ssl stripping against the specified host"
+        print "use \"ssl stop all\" to stop all currently running ssl stripping"
+
+    help_for["ssl_stop"] = help_ssl_stop
