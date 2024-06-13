@@ -72,11 +72,18 @@ class Host():
             self.arp_poisoner.start()
             self.arp_started = True
 
-    # stops currently running arp poisoning attack
-    def arp_stop(self, mac_attacker, mac_victim, ip_victim, mac_gateway, ip_gateway):
+    # restores arp packets to before their original pre-spoof state
+    def arp_restore(self, mac_attacker, mac_victim, ip_victim, mac_gateway, ip_gateway):
 
         if self.arp_started:
+            print "Please stop running the current arp poisoning attack"
+        else:
             self.arp_poisoner.restore_arp(mac_attacker, mac_victim, ip_victim, mac_gateway, ip_gateway)
+
+    # stops currently running arp poisoning attack
+    def arp_stop(self):
+
+        if self.arp_started:
             self.arp_poisoner.stop()
 
     def dns_add(self, url, ip):
@@ -110,9 +117,10 @@ class Host():
             self.dns_poisoner.stop()
 
     def remove(self):
-
+        
         self.arp_poisoner.stop()
         self.dns_poisoner.stop()
+        self.ssl_remover.stop()
 
 # scan on specified range and interface, return found gateway and hosts
 def get_hosts(interface, range_, timeout, gateway, hosts):
