@@ -17,6 +17,7 @@ class Host():
         self.dns_poisoner   = DnsPoisoner(ip, dns_queue_num)
         self.dns_started    = False
         self.ssl_remover    = SslRemover(ip, dns_queue_num + 1)
+        self.ssl_started    = False
         self.seen_this_scan = True
 
     # prepares one-way arp poisoning attack, telling this host that "other_ip" is at "other_mac"
@@ -115,6 +116,18 @@ class Host():
 
         if self.dns_started:
             self.dns_poisoner.stop()
+
+    def ssl_start(self):
+
+        if not self.ssl_started:
+            self.ssl_remover.start()
+            self.ssl_started = True
+
+    def ssl_stop(self):
+
+        if self.ssl_started:
+            self.ssl_remover.stop()
+            self.ssl_started = False
 
     def remove(self):
         
