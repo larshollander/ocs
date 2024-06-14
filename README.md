@@ -52,7 +52,27 @@ One final step to fully finish the ARP poisoning attack, is to restore the ARP t
 
 ### DNS poisoning example
 
-
+For the DNS poisoning attack, we first specify the desired URL/IP combinations:
+```
+>>> dns add 2
+URL to spoof: *.example.com
+IP address to lead to (leave empty for own IP address): 1.2.3.4
+```
+Next, we start the DNS poisoning attack:
+```
+>>> dns poison 2
+DNS poisoning attack started
+```
+The DNS poisoning attack relies on a running MITM ARP poisoning attack in order to modify DNS responses. However, the tool will do this automatically.
+We stop the DNS poisoning attack:
+```
+>>> dns stop 2
+DNS poisoning attack stopped
+```
+We also need to stop the ARP poisoning attack that was started automatically:
+```
+>>> arp stop 2
+```
 
 ### SSL stripping example
 
