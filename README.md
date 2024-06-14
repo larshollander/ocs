@@ -30,14 +30,23 @@ gateway at 192.168.18.1
 ```
 
 ### ARP poisoning example
-We perform an ARP poisoning attack against 192.168.18.4 as follows:
+Let's say we want to perform a man-in-the-middle ARP spoofing/poisoning attack.
+
+We simply run the command:
 ```
->>> arp mitm 2
+>>> arp mitm [host]
 ```
-Now all traffic between the target and the gateway goes via the attacker's system. It is therefore subject to the rules defined in the attacker's iptables configuration.
-We stop the ARP poisoning attack:
+Now, a continuous stream of ARP packets is being sent out to the specified host and the gateway. Their ARP tables are poisoned such that all traffic will now go through our attacker machine.
+
+If we want to stop the poisoning attack, we run:
 ```
->>> arp stop 2
+>>> arp stop [host]
+```
+Now, the stream of ARP packets is no longer being sent out.
+
+One final step to fully finish the ARP poisoning attack, is to restore the ARP tables of both the specified host and the gateway, by running:
+```
+>>> arp restore [host]
 ```
 
 ### DNS poisoning example
@@ -62,3 +71,19 @@ We also need to stop the ARP poisoning attack that was started automatically:
 ```
 >>> arp stop 2
 ```
+
+### SSL stripping example
+
+Before SSL stripping is possible, we have to run the ARP MITM poisoning attack so that all traffic goes through the attacker and can be stripped. 
+
+We again run:
+```
+>>> arp mitm [host]
+```
+
+Then, we run:
+```
+>>> ssl strip [host]
+```
+
+This will run the SSL stripping script, which will automatically perform the stripping while the specified host browses the internet. 
