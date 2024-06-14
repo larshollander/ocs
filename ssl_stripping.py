@@ -7,6 +7,7 @@ import os
 import threading
 import cryptography    #required for tls
 
+THIS IS DJANGO"S VERSION WITH M0XIE
 class SslRemover():
 
     def __init__(self, queue_num):
