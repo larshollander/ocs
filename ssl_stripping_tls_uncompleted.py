@@ -28,11 +28,6 @@ class SslRemover():
 
         self.queue.bind(queue_num, self.handle_packet)
 
-    # def stripped_victim_automation(self):
-    #     #socket = TCP_client.tcplink(HTTP, <>, 80)
-    #     pass
-
-
     def start_tls_automaton(self, url):
         self.connection = TLSClientAutomaton.tlsink(HTTP, server=url, dport=500)
         #pkt = a.sr1(HTTP()/HTTPRequest(), session=TCPSession(app=True), timeout=2)
@@ -49,23 +44,6 @@ class SslRemover():
 
     def handle_packet(self, packet_nfqueue):
         packet_scapy = IP(packet_nfqueue.get_payload())
-        #if not packet_scapy.haslayer(Raw):
-        #    return packet_nfqueue.accept()
-        #print "\n"
-        #print packet_scapy.show()
-        #print "\n"
-        #if packet_scapy.haslayer(Raw):
-            #payload = packet_scapy[Raw].load
-            #if 'https' in payload:
-            #    payload = payload.replace('https', 'http')
-            #    packet_scapy[Raw].load = payload
-            #    print "Changed Raw Payload"
-            #    print packet_scapy[Raw].load
-            #    del packet_scapy[IP].len
-            #    del packet_scapy[IP].chksum
-            #    del packet_scapy[TCP].chksum
-            #    packet_nfqueue.set_payload(bytes(packet_scapy))
-            #return packet_nfqueue.accept()
 
         if packet_scapy.haslayer(HTTPResponse):
             print packet_scapy.show()
