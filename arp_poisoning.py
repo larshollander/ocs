@@ -87,7 +87,6 @@ def test_cb():
     arp_poisoner.add_packet(mac_attacker, mac_gateway, ip_victim, ip_gateway)
 
     arp_poisoner.start()
-    arp_poisoner.run()
     time.sleep(10)
     arp_poisoner.stop()
 
