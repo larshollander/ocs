@@ -76,7 +76,7 @@ class Host():
     # stops currently running arp poisoning attack
     def arp_pause(self):
 
-	self.arp_poisoner.pause()
+    	self.arp_poisoner.pause()
 
     def arp_stop(self):
  
