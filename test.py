@@ -5,7 +5,7 @@ from hosts import get_hosts
 os.system("sysctl -w net.ipv4.ip_forward=1")
 os.system("iptables -P FORWARD ACCEPT")
 
-gateway, hosts = get_hosts("enp0s3", "10.0.123.1/255", 3, [], [])
+gateway, hosts = get_hosts("enp0s10", "10.0.123.1/255", 3, [], [])
 target = [host for host in hosts if host.ip == "10.0.123.4"]
 
 _ = input("press enter to start arp mitm\n")
