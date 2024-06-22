@@ -24,3 +24,6 @@ target.dns_clean()
 
 _ = input("press enter to start ssl stripping\n")
 _ = input("press enter to stop ssl stripping\n")
+
+os.system("sysctl -w net.ipv4.ip_forward=0")
+os.system("iptables -P FORWARD REJECT")
