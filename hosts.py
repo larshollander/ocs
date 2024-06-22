@@ -173,7 +173,7 @@ def get_hosts(interface, range_, timeout, gateway, hosts):
             else:
                 hosts.append(Host(reply.psrc, reply.hwsrc, interface, 3*(len(hosts) + 1) ))
 
-    gateway = gateway if gateway.seen_this_scan else None
+    gateway = gateway if (gateway and gateway.seen_this_scan) else None
     hosts   = [host for host in hosts if host.seen_this_scan]
 
     return gateway, hosts
